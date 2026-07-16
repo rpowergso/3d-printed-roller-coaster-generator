@@ -32,9 +32,10 @@ CREATE_SPINE_CENTER_SKETCH = False
 HIDE_HELPER_SKETCHES = True
 HIDE_CONSTRUCTION_GEOMETRY = True
 
-PERFORMANCE_BUFFER_LOGS = False
-PERFORMANCE_LOG_FLUSH_LINE_COUNT = 100
-PERFORMANCE_SUPPRESS_VIEWPORT_REFRESH = True
+# Set this to True whenever you want the track-folder and support-XML dialogs back.
+PROMPT_FOR_INPUT_PATHS = False
+DEFAULT_TRACK_BASE_FOLDER = r'C:\Users\rpowe\Documents\SimpleCorkscrew'
+DEFAULT_SUPPORT_XML_PATH = r'C:\Users\rpowe\Documents\SimpleCorkscrew\corkscrew_supports.xml'
 
 DEBUG_SWEEP_LOGGING = False
 DEBUG_LOG_FILENAME = 'ImportAllTrack_sweep_debug.log'
@@ -54,23 +55,30 @@ SUPPORT_FOOTER_PAD_DIAMETER_M = 1.0
 SUPPORT_FOOTER_PAD_HEIGHT_M = 0.16
 SUPPORT_TRACK_INTERFACE_DIAMETER_M = 0.70
 SUPPORT_TRACK_INTERFACE_STANDOFF_CM = 0.35
-SUPPORT_TRACK_MIN_CLEARANCE_CM = 0.20
-SUPPORT_INTERFACE_TRANSITION_STANDOFF_CM = 0.30
 SUPPORT_BEAM_DIAMETER_SCALE = 0.75
 SUPPORT_INTERFACE_START_MAX_SIZE_CM = 0.90
 SUPPORT_INTERFACE_TRACK_MAX_SIZE_CM = 0.55
 SUPPORT_CROSSTIE_CLEARANCE_CM = 0.1636
 SUPPORT_STRAIGHT_CLEARANCE_DROP_MAX_CM = 1.50
-SUPPORT_TRACK_INTERSECTION_CLEARANCE_CM = 1.00
-SUPPORT_TRACK_INTERSECTION_STEP_CM = 0.10
-SUPPORT_TRACK_INTERSECTION_MAX_STEPS = 20
-SUPPORT_TRACK_INTERSECTION_EPSILON_CM3 = 0.000001
-SUPPORT_CONNECTOR_DIAMETER_SCALE = 0.62
-SUPPORT_CONNECTOR_MIN_DIAMETER_CM = 0.35
-SUPPORT_CONNECTOR_OVERLAP_CM = 0.12
-SUPPORT_CONNECTOR_CREATE_COLLAR = False
-SUPPORT_CONNECTOR_COLLAR_SCALE = 1.35
-SUPPORT_CONNECTOR_COLLAR_THICKNESS_SCALE = 0.35
+SUPPORT_TRACK_PAD_STANDOFF_CM = 1.635 / 10.0
+SUPPORT_CROSSTIE_MARGIN_CM = 0.3 / 10.0
+SUPPORT_MAX_SNAP_CM = 1.0
+SUPPORT_TRACK_COLLAR_LENGTH_CM = 0.12
+SUPPORT_MAX_BEAM_EXTENSION_CM = 0.5
+SUPPORT_MIN_CONNECTOR_DIAMETER_CM = 0.05
+SUPPORT_TRACK_PAD_SQUARE_SCALE = 2.0
+SUPPORT_TRACK_PAD_CIRCLE_SCALE = 2.0
+SUPPORT_TRACK_COLLAR_DIAMETER_SCALE = 2.0
+SUPPORT_MIN_ANGLED_CONNECTOR_LENGTH_CM = 0.20
+SUPPORT_CONNECTOR_OVERLAP_CM = 0.02
+SUPPORT_FOOTER_BEAM_EMBED_CM = 0.04
+SUPPORT_MAX_CROSSTIE_BAY_CM = 4.0
+SUPPORT_SINGLE_DOUBLE_TRACK_SQUARE_SIZE_MM = 11.285
+SUPPORT_SINGLE_DOUBLE_PAD_STANDOFF_CM = 1.7 / 10.0
+SUPPORT_SINGLE_DOUBLE_COLLAR_LENGTH_CM = 5.1 / 10.0
+SUPPORT_OVERHANG_MIN_HEAD_LENGTH_CM = 1.0 / 10.0
+SUPPORT_REGULAR_MAX_ROLL_DEG = 75.0
+SUPPORT_90_MAX_ROLL_DEG = 145.0
 
 # Crosstie extrusion depth along track direction.
 CROSSTIE_DEPTH_MM = 3.0
@@ -143,9 +151,6 @@ def debugLogPath():
 
 
 def resetDebugLog():
-    global DEBUG_LOG_BUFFER
-
-    DEBUG_LOG_BUFFER = []
     if not DEBUG_SWEEP_LOGGING:
         return
 
@@ -159,37 +164,13 @@ def resetDebugLog():
 
 
 def debugLog(message):
-    global DEBUG_LOG_BUFFER
-
     if not DEBUG_SWEEP_LOGGING:
         return
 
-    timestamp = datetime.datetime.now().isoformat(timespec='seconds')
-    line = f'[{timestamp}] {message}\n'
-
-    if PERFORMANCE_BUFFER_LOGS:
-        DEBUG_LOG_BUFFER.append(line)
-        if len(DEBUG_LOG_BUFFER) >= PERFORMANCE_LOG_FLUSH_LINE_COUNT:
-            flushDebugLogBuffer()
-        return
-
     try:
         with open(debugLogPath(), 'a', encoding='utf-8') as logFile:
-            logFile.write(line)
-    except:
-        pass
-
-
-def flushDebugLogBuffer():
-    global DEBUG_LOG_BUFFER
-
-    if not DEBUG_SWEEP_LOGGING or not DEBUG_LOG_BUFFER:
-        return
-
-    try:
-        with open(debugLogPath(), 'a', encoding='utf-8') as logFile:
-            logFile.writelines(DEBUG_LOG_BUFFER)
-        DEBUG_LOG_BUFFER = []
+            timestamp = datetime.datetime.now().isoformat(timespec='seconds')
+            logFile.write(f'[{timestamp}] {message}\n')
     except:
         pass
 
@@ -202,9 +183,6 @@ def supportDebugLogPath():
 
 
 def resetSupportDebugLog():
-    global SUPPORT_DEBUG_LOG_BUFFER
-
-    SUPPORT_DEBUG_LOG_BUFFER = []
     if not SUPPORT_DEBUG_LOGGING:
         return
 
@@ -218,84 +196,15 @@ def resetSupportDebugLog():
 
 
 def supportDebugLog(message):
-    global SUPPORT_DEBUG_LOG_BUFFER
-
     if not SUPPORT_DEBUG_LOGGING:
         return
 
-    timestamp = datetime.datetime.now().isoformat(timespec='seconds')
-    line = f'[{timestamp}] {message}\n'
-
-    if PERFORMANCE_BUFFER_LOGS:
-        SUPPORT_DEBUG_LOG_BUFFER.append(line)
-        if len(SUPPORT_DEBUG_LOG_BUFFER) >= PERFORMANCE_LOG_FLUSH_LINE_COUNT:
-            flushSupportDebugLogBuffer()
-        return
-
     try:
         with open(supportDebugLogPath(), 'a', encoding='utf-8') as logFile:
-            logFile.write(line)
+            timestamp = datetime.datetime.now().isoformat(timespec='seconds')
+            logFile.write(f'[{timestamp}] {message}\n')
     except:
         pass
-
-
-def flushSupportDebugLogBuffer():
-    global SUPPORT_DEBUG_LOG_BUFFER
-
-    if not SUPPORT_DEBUG_LOGGING or not SUPPORT_DEBUG_LOG_BUFFER:
-        return
-
-    try:
-        with open(supportDebugLogPath(), 'a', encoding='utf-8') as logFile:
-            logFile.writelines(SUPPORT_DEBUG_LOG_BUFFER)
-        SUPPORT_DEBUG_LOG_BUFFER = []
-    except:
-        pass
-
-
-def flushDebugLogs():
-    flushDebugLogBuffer()
-    flushSupportDebugLogBuffer()
-
-
-def suppressViewportRefresh(app):
-    global VIEWPORT_REFRESH_WAS_SUPPRESSED
-
-    if not PERFORMANCE_SUPPRESS_VIEWPORT_REFRESH or not app:
-        return
-
-    for methodName in ('disableViewportRefresh', 'disableViewportUpdates'):
-        method = getattr(app, methodName, None)
-        if not callable(method):
-            continue
-        try:
-            method()
-            VIEWPORT_REFRESH_WAS_SUPPRESSED = True
-            debugLog(f'performance: called app.{methodName}()')
-            return
-        except Exception as err:
-            debugLog(f'performance: app.{methodName}() failed: {err}')
-
-
-def restoreViewportRefresh(app):
-    global VIEWPORT_REFRESH_WAS_SUPPRESSED
-
-    if not VIEWPORT_REFRESH_WAS_SUPPRESSED or not app:
-        return
-
-    for methodName in ('enableViewportRefresh', 'enableViewportUpdates'):
-        method = getattr(app, methodName, None)
-        if not callable(method):
-            continue
-        try:
-            method()
-            VIEWPORT_REFRESH_WAS_SUPPRESSED = False
-            debugLog(f'performance: called app.{methodName}()')
-            return
-        except Exception as err:
-            debugLog(f'performance: app.{methodName}() failed: {err}')
-
-    VIEWPORT_REFRESH_WAS_SUPPRESSED = False
 
 
 def formatPoint(point):
@@ -379,26 +288,6 @@ def describeProfile(profile):
         pieces.append(f'areaError={err}')
 
     return ', '.join(pieces) if pieces else 'profile'
-
-
-def describeLoftSection(section):
-    if not section:
-        return 'None'
-
-    pieces = []
-    try:
-        pieces.append(f'type={section.objectType}')
-    except:
-        pass
-
-    try:
-        props = section.areaProperties(adsk.fusion.CalculationAccuracy.LowCalculationAccuracy)
-        pieces.append(f'area={props.area:.6f}cm2')
-        pieces.append(f'centroid={formatPoint(props.centroid)}')
-    except Exception as err:
-        pieces.append(f'areaError={err}')
-
-    return ', '.join(pieces) if pieces else 'section'
 
 
 def promptForBaseFolder(ui):
@@ -562,6 +451,16 @@ def safeNormalize(vec):
         return False
     vec.normalize()
     return True
+
+
+def copyVector(vec):
+    return adsk.core.Vector3D.create(vec.x, vec.y, vec.z)
+
+
+def scaledVector(vec, scale):
+    result = copyVector(vec)
+    result.scaleBy(scale)
+    return result
 
 
 def dotPointVector(a, b, axis):
@@ -890,35 +789,6 @@ def extrudeProfile(component, profile, depthCm, operation, name):
         extInput.setSymmetricExtent(distance, True)
     except:
         extInput.setDistanceExtent(False, distance)
-
-    feature = extrudes.add(extInput)
-    feature.name = name
-    return feature
-
-
-def extrudeCutProfile(component, profile, depthCm, name, participantBody=None):
-    if depthCm <= 0:
-        return None
-
-    extrudes = component.features.extrudeFeatures
-    extInput = extrudes.createInput(
-        profile,
-        adsk.fusion.FeatureOperations.CutFeatureOperation
-    )
-
-    distance = adsk.core.ValueInput.createByReal(-depthCm)
-    try:
-        extInput.setDistanceExtent(False, distance)
-    except:
-        return None
-
-    if participantBody:
-        try:
-            bodies = adsk.core.ObjectCollection.create()
-            bodies.add(participantBody)
-            extInput.participantBodies = bodies
-        except:
-            pass
 
     feature = extrudes.add(extInput)
     feature.name = name
@@ -1400,12 +1270,7 @@ def createSpineLoftProfile(component, scaledLeft, scaledRight, scaledBottom, sta
     return profile
 
 
-def createLoftFromProfiles(
-    component,
-    profiles,
-    name,
-    operation=adsk.fusion.FeatureOperations.NewBodyFeatureOperation
-):
+def createLoftFromProfiles(component, profiles, name):
     global LAST_SWEEP_ERROR
 
     if len(profiles) < 2:
@@ -1416,7 +1281,7 @@ def createLoftFromProfiles(
     try:
         debugLog(f'createLoftFromProfiles {name}: begin profileCount={len(profiles)}')
         lofts = component.features.loftFeatures
-        loftInput = lofts.createInput(operation)
+        loftInput = lofts.createInput(adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
 
         try:
             loftInput.isSolid = True
@@ -1436,7 +1301,7 @@ def createLoftFromProfiles(
         sections = loftInput.loftSections
         for i, profile in enumerate(profiles):
             if DEBUG_SWEEP_LOGGING:
-                debugLog(f'createLoftFromProfiles {name}: add section {i}: {describeLoftSection(profile)}')
+                debugLog(f'createLoftFromProfiles {name}: add section {i}: {describeProfile(profile)}')
             sections.add(profile)
 
         feature = lofts.add(loftInput)
@@ -1527,6 +1392,7 @@ def createPartialCenterSpineSweep(component, scaledLeft, scaledRight, spineCente
     )
 
     if loft:
+        LAST_SWEEP_ERROR = ''
         debugLog(f'createPartialCenterSpineSweep {namePrefix}: loft succeeded')
         return True
 
@@ -1663,73 +1529,422 @@ def addNearestCrosstieDistance(sample, supportTrackData):
     return sample
 
 
-def sampleSupportTrack(supportTrackData, centerRailsCoordMeters, supportScaleFactor, snapToSafe=True, forceSafe=False):
+def mergeIntervals(intervals):
+    cleaned = [
+        (min(start, end), max(start, end))
+        for start, end in intervals
+        if start is not None and end is not None
+    ]
+    if not cleaned:
+        return []
+
+    cleaned.sort(key=lambda item: item[0])
+    merged = [cleaned[0]]
+
+    for start, end in cleaned[1:]:
+        lastStart, lastEnd = merged[-1]
+        if start <= lastEnd + 0.000001:
+            merged[-1] = (lastStart, max(lastEnd, end))
+        else:
+            merged.append((start, end))
+
+    return merged
+
+
+def complementIntervals(forbidden, startCm, endCm):
+    if endCm < startCm:
+        return []
+
+    allowed = []
+    cursor = startCm
+
+    for start, end in forbidden:
+        if end < startCm or start > endCm:
+            continue
+
+        start = max(start, startCm)
+        end = min(end, endCm)
+
+        if start > cursor:
+            allowed.append((cursor, start))
+
+        cursor = max(cursor, end)
+
+    if cursor < endCm:
+        allowed.append((cursor, endCm))
+
+    return allowed
+
+
+def supportTrackPadSquareSizeCm(connectorDiameterCm):
+    return max(connectorDiameterCm * SUPPORT_TRACK_PAD_SQUARE_SCALE, SUPPORT_MIN_CONNECTOR_DIAMETER_CM)
+
+
+def supportTrackPadCircleDiameterCm(beamDiameterCm):
+    return max(beamDiameterCm * SUPPORT_TRACK_PAD_CIRCLE_SCALE, SUPPORT_MIN_CONNECTOR_DIAMETER_CM)
+
+
+def supportTrackCollarDiameterCm(beamDiameterCm):
+    return max(beamDiameterCm * SUPPORT_TRACK_COLLAR_DIAMETER_SCALE, SUPPORT_MIN_CONNECTOR_DIAMETER_CM)
+
+
+def supportPadStandoffCm(supportKind):
+    if supportKind in ('single', 'double', '90', '180'):
+        return SUPPORT_SINGLE_DOUBLE_PAD_STANDOFF_CM
+
+    return SUPPORT_TRACK_PAD_STANDOFF_CM
+
+
+def supportCollarLengthCm(supportKind):
+    if supportKind in ('single', 'double', '90', '180'):
+        return SUPPORT_SINGLE_DOUBLE_COLLAR_LENGTH_CM
+
+    return SUPPORT_TRACK_COLLAR_LENGTH_CM
+
+
+def supportMinHeadLengthCm(supportKind):
+    if supportKind in ('90', '180'):
+        return SUPPORT_OVERHANG_MIN_HEAD_LENGTH_CM
+
+    return SUPPORT_MIN_ANGLED_CONNECTOR_LENGTH_CM
+
+
+def supportRequiredInterfaceStandoffCm(supportKind):
+    return max(
+        SUPPORT_TRACK_INTERFACE_STANDOFF_CM,
+        supportPadStandoffCm(supportKind)
+        + supportCollarLengthCm(supportKind)
+        + supportMinHeadLengthCm(supportKind)
+    )
+
+
+def supportConnectorClearanceCm(connectorDiameterCm, squareSizeCm):
+    crosstieHalfDepthCm = mm_to_cm(CROSSTIE_DEPTH_MM) * 0.5
+    footprintHalfCm = max(connectorDiameterCm, squareSizeCm) * 0.5
+    return crosstieHalfDepthCm + footprintHalfCm + SUPPORT_CROSSTIE_MARGIN_CM
+
+
+def clampDistanceCm(value, startCm, endCm):
+    return min(max(value, startCm), endCm)
+
+
+def findCrosstieBayForDistance(supportTrackData, targetCm):
+    if not isinstance(supportTrackData, dict):
+        return None
+
+    stations = sorted(
+        [
+            station for station in supportTrackData.get('crosstieStations', [])
+            if station.get('distanceCm') is not None
+        ],
+        key=lambda station: station['distanceCm']
+    )
+    if len(stations) < 2:
+        return None
+
+    previousStation = None
+    nextStation = None
+
+    for station in stations:
+        if station['distanceCm'] <= targetCm:
+            previousStation = station
+            continue
+
+        nextStation = station
+        break
+
+    if not previousStation or not nextStation:
+        return None
+
+    previousCm = previousStation['distanceCm']
+    nextCm = nextStation['distanceCm']
+    bayGapCm = nextCm - previousCm
+    if bayGapCm <= 0.0 or bayGapCm > SUPPORT_MAX_CROSSTIE_BAY_CM:
+        return None
+
+    bayCenterCm = (previousCm + nextCm) * 0.5
+    return {
+        'previousStation': previousStation,
+        'nextStation': nextStation,
+        'prevCrosstieCm': previousCm,
+        'nextCrosstieCm': nextCm,
+        'bayGapCm': bayGapCm,
+        'bayCenterCm': bayCenterCm,
+        'centerSnapDeltaCm': bayCenterCm - targetCm
+    }
+
+
+def availableSupportFootprintCm(bayInfo):
+    if not bayInfo:
+        return None
+
+    return (
+        bayInfo['bayGapCm']
+        - mm_to_cm(CROSSTIE_DEPTH_MM)
+        - SUPPORT_CROSSTIE_MARGIN_CM * 2.0
+    )
+
+
+def fittedConnectorSizesCm(beamDiameterCm, bayInfo, supportKind):
+    if supportKind in ('single', 'double', '90', '180'):
+        desiredSquareCm = mm_to_cm(SUPPORT_SINGLE_DOUBLE_TRACK_SQUARE_SIZE_MM)
+        desiredCircleCm = beamDiameterCm
+        desiredCollarCm = beamDiameterCm
+    else:
+        desiredSquareCm = supportTrackPadSquareSizeCm(beamDiameterCm)
+        desiredCircleCm = supportTrackPadCircleDiameterCm(beamDiameterCm)
+        desiredCollarCm = supportTrackCollarDiameterCm(beamDiameterCm)
+
+    finalSquareCm = desiredSquareCm
+    finalCircleCm = desiredCircleCm
+    finalCollarCm = desiredCollarCm
+    availableCm = availableSupportFootprintCm(bayInfo)
+    capScale = 1.0
+    fitStatus = 'uncapped'
+
+    if availableCm is not None:
+        largestCm = max(desiredSquareCm, desiredCircleCm, desiredCollarCm)
+        if availableCm < SUPPORT_MIN_CONNECTOR_DIAMETER_CM:
+            finalSquareCm = SUPPORT_MIN_CONNECTOR_DIAMETER_CM
+            finalCircleCm = SUPPORT_MIN_CONNECTOR_DIAMETER_CM
+            finalCollarCm = SUPPORT_MIN_CONNECTOR_DIAMETER_CM
+            capScale = 0.0
+            fitStatus = 'bay_too_tight_minimum'
+        elif largestCm > availableCm:
+            capScale = availableCm / largestCm
+            finalSquareCm = max(desiredSquareCm * capScale, SUPPORT_MIN_CONNECTOR_DIAMETER_CM)
+            finalCircleCm = max(desiredCircleCm * capScale, SUPPORT_MIN_CONNECTOR_DIAMETER_CM)
+            finalCollarCm = max(desiredCollarCm * capScale, SUPPORT_MIN_CONNECTOR_DIAMETER_CM)
+            fitStatus = 'capped_to_bay'
+
+    return {
+        'beamDiameterCm': beamDiameterCm,
+        'desiredSquareSizeCm': desiredSquareCm,
+        'squareSizeCm': finalSquareCm,
+        'desiredCircleDiameterCm': desiredCircleCm,
+        'circleDiameterCm': finalCircleCm,
+        'desiredCollarDiameterCm': desiredCollarCm,
+        'collarDiameterCm': finalCollarCm,
+        'availableFootprintCm': availableCm,
+        'capScale': capScale,
+        'fitStatus': fitStatus,
+        'nearTrackFootprintCm': max(finalSquareCm, finalCircleCm, finalCollarCm)
+    }
+
+
+def sampleSupportTrackInBay(supportTrackData, targetCm, bayInfo, requiredClearanceCm):
+    if not bayInfo:
+        return None
+
+    sample = sampleSupportTrackAtDistance(supportTrackData, bayInfo['bayCenterCm'])
+    if not sample:
+        return None
+
+    nearestCm = nearestCrosstieStationDistanceCm(supportTrackData, bayInfo['bayCenterCm'])
+    sample.update({
+        'snapStatus': 'bay_center',
+        'originalTargetCm': targetCm,
+        'snappedTargetCm': bayInfo['bayCenterCm'],
+        'snapDeltaCm': bayInfo['bayCenterCm'] - targetCm,
+        'requiredClearanceCm': requiredClearanceCm,
+        'nearestCrosstieCm': nearestCm,
+        'prevCrosstieCm': bayInfo['prevCrosstieCm'],
+        'nextCrosstieCm': bayInfo['nextCrosstieCm'],
+        'bayGapCm': bayInfo['bayGapCm'],
+        'bayCenterCm': bayInfo['bayCenterCm'],
+        'centerSnapDeltaCm': bayInfo['centerSnapDeltaCm']
+    })
+    sample['targetCm'] = bayInfo['bayCenterCm']
+    sample['distanceCm'] = bayInfo['bayCenterCm']
+    return sample
+
+
+def safeSupportDistanceCm(supportTrackData, targetCm, requiredClearanceCm):
     if isinstance(supportTrackData, dict):
         samples = supportTrackData.get('samples', [])
-        safeAnchors = supportTrackData.get('safeAnchors', [])
     else:
         samples = supportTrackData or []
-        safeAnchors = []
+
+    if not samples:
+        return targetCm, {
+            'snapStatus': 'no_track_samples',
+            'originalTargetCm': targetCm,
+            'snappedTargetCm': targetCm,
+            'snapDeltaCm': 0.0,
+            'requiredClearanceCm': requiredClearanceCm,
+            'nearestCrosstieCm': None
+        }
+
+    startCm = samples[0]['distanceCm']
+    endCm = samples[-1]['distanceCm']
+    clampedTargetCm = clampDistanceCm(targetCm, startCm, endCm)
+
+    if requiredClearanceCm <= 0.0:
+        nearestCm = nearestCrosstieStationDistanceCm(supportTrackData, clampedTargetCm)
+        return clampedTargetCm, {
+            'snapStatus': 'not_requested',
+            'originalTargetCm': targetCm,
+            'snappedTargetCm': clampedTargetCm,
+            'snapDeltaCm': clampedTargetCm - targetCm,
+            'requiredClearanceCm': requiredClearanceCm,
+            'nearestCrosstieCm': nearestCm
+        }
+
+    crosstieStations = []
+    if isinstance(supportTrackData, dict):
+        crosstieStations = supportTrackData.get('crosstieStations', [])
+
+    forbidden = []
+    for station in crosstieStations:
+        stationCm = station.get('distanceCm')
+        if stationCm is None:
+            continue
+        forbidden.append((
+            max(startCm, stationCm - requiredClearanceCm),
+            min(endCm, stationCm + requiredClearanceCm)
+        ))
+
+    forbidden = mergeIntervals(forbidden)
+    allowed = complementIntervals(forbidden, startCm, endCm)
+    nearestOriginalCm = nearestCrosstieStationDistanceCm(supportTrackData, clampedTargetCm)
+
+    if not allowed:
+        return clampedTargetCm, {
+            'snapStatus': 'no_safe_interval',
+            'originalTargetCm': targetCm,
+            'snappedTargetCm': clampedTargetCm,
+            'snapDeltaCm': clampedTargetCm - targetCm,
+            'requiredClearanceCm': requiredClearanceCm,
+            'nearestCrosstieCm': nearestOriginalCm
+        }
+
+    for start, end in allowed:
+        if start - 0.000001 <= clampedTargetCm <= end + 0.000001:
+            nearestCm = nearestCrosstieStationDistanceCm(supportTrackData, clampedTargetCm)
+            return clampedTargetCm, {
+                'snapStatus': 'already_safe',
+                'originalTargetCm': targetCm,
+                'snappedTargetCm': clampedTargetCm,
+                'snapDeltaCm': clampedTargetCm - targetCm,
+                'requiredClearanceCm': requiredClearanceCm,
+                'nearestCrosstieCm': nearestCm
+            }
+
+    candidates = []
+    for start, end in allowed:
+        candidates.append(start)
+        candidates.append(end)
+
+    snappedCm = min(candidates, key=lambda item: abs(item - clampedTargetCm))
+    movementCm = abs(snappedCm - clampedTargetCm)
+    if movementCm > SUPPORT_MAX_SNAP_CM:
+        snappedCm = clampedTargetCm
+        snapStatus = 'snap_exceeds_max'
+    else:
+        snapStatus = 'snapped'
+
+    nearestCm = nearestCrosstieStationDistanceCm(supportTrackData, snappedCm)
+    return snappedCm, {
+        'snapStatus': snapStatus,
+        'originalTargetCm': targetCm,
+        'snappedTargetCm': snappedCm,
+        'snapDeltaCm': snappedCm - targetCm,
+        'requiredClearanceCm': requiredClearanceCm,
+        'nearestCrosstieCm': nearestCm,
+        'nearestOriginalCrosstieCm': nearestOriginalCm,
+        'snapMovementCm': movementCm
+    }
+
+
+def sampleSupportTrackAtDistance(supportTrackData, distanceCm):
+    if isinstance(supportTrackData, dict):
+        samples = supportTrackData.get('samples', [])
+    else:
+        samples = supportTrackData or []
 
     if not samples:
         return None
 
-    targetCm = centerRailsCoordMeters * supportScaleFactor
-    targetNearestCrosstieCm = nearestCrosstieStationDistanceCm(supportTrackData, targetCm)
-    if forceSafe and safeAnchors:
-        validAnchors = [
-            item for item in safeAnchors
-            if item.get('nearestCrosstieDistanceCm', 999999.0) >= SUPPORT_CROSSTIE_CLEARANCE_CM
-        ]
-        anchorChoices = validAnchors if validAnchors else safeAnchors
-        anchor = min(anchorChoices, key=lambda item: abs(item['distanceCm'] - targetCm))
-        result = dict(anchor)
-        result['originalTargetCm'] = targetCm
-        result['snapDeltaCm'] = result['distanceCm'] - targetCm
-        result['requestedNearestCrosstieCm'] = targetNearestCrosstieCm
-        result['forcedSafeAnchor'] = True
-        return result
+    startCm = samples[0]['distanceCm']
+    endCm = samples[-1]['distanceCm']
+    distanceCm = clampDistanceCm(distanceCm, startCm, endCm)
 
-    shouldSnap = (
-        snapToSafe
-        and safeAnchors
-        and targetNearestCrosstieCm is not None
-        and targetNearestCrosstieCm < SUPPORT_CROSSTIE_CLEARANCE_CM
-    )
-
-    if shouldSnap:
-        validAnchors = [
-            item for item in safeAnchors
-            if item.get('nearestCrosstieDistanceCm', 999999.0) >= SUPPORT_CROSSTIE_CLEARANCE_CM
-        ]
-        anchorChoices = validAnchors if validAnchors else safeAnchors
-        anchor = min(anchorChoices, key=lambda item: abs(item['distanceCm'] - targetCm))
-        result = dict(anchor)
-        result['originalTargetCm'] = targetCm
-        result['snapDeltaCm'] = result['distanceCm'] - targetCm
-        result['requestedNearestCrosstieCm'] = targetNearestCrosstieCm
-        return result
-
-    if targetCm <= samples[0]['distanceCm']:
-        result = dict(samples[0], targetCm=targetCm, t=0.0)
+    if distanceCm <= startCm:
+        result = dict(samples[0])
+        result['targetCm'] = startCm
+        result['distanceCm'] = startCm
+        result['t'] = 0.0
         return addNearestCrosstieDistance(result, supportTrackData)
-    if targetCm >= samples[-1]['distanceCm']:
-        result = dict(samples[-1], targetCm=targetCm, t=1.0)
+
+    if distanceCm >= endCm:
+        result = dict(samples[-1])
+        result['targetCm'] = endCm
+        result['distanceCm'] = endCm
+        result['t'] = 1.0
         return addNearestCrosstieDistance(result, supportTrackData)
 
     for i in range(len(samples) - 1):
         startSample = samples[i]
         endSample = samples[i + 1]
-        if endSample['distanceCm'] < targetCm:
+        if endSample['distanceCm'] < distanceCm:
             continue
 
         segmentLength = endSample['distanceCm'] - startSample['distanceCm']
-        t = 0.0 if segmentLength < 0.000001 else (targetCm - startSample['distanceCm']) / segmentLength
-        result = interpolateTrackSample(startSample, endSample, targetCm, t)
+        t = 0.0 if segmentLength < 0.000001 else (distanceCm - startSample['distanceCm']) / segmentLength
+        result = interpolateTrackSample(startSample, endSample, distanceCm, t)
         return addNearestCrosstieDistance(result, supportTrackData)
 
-    result = dict(samples[-1], targetCm=targetCm, t=1.0)
+    result = dict(samples[-1])
+    result['targetCm'] = endCm
+    result['distanceCm'] = endCm
+    result['t'] = 1.0
     return addNearestCrosstieDistance(result, supportTrackData)
+
+
+def sampleSupportTrack(
+    supportTrackData,
+    centerRailsCoordMeters,
+    supportScaleFactor,
+    requiredClearanceCm=0.0,
+    snapToSafe=True
+):
+    if isinstance(supportTrackData, dict):
+        samples = supportTrackData.get('samples', [])
+    else:
+        samples = supportTrackData or []
+
+    if not samples:
+        return None
+
+    originalTargetCm = centerRailsCoordMeters * supportScaleFactor
+    if snapToSafe and requiredClearanceCm > 0.0:
+        sampledDistanceCm, snapInfo = safeSupportDistanceCm(
+            supportTrackData,
+            originalTargetCm,
+            requiredClearanceCm
+        )
+    else:
+        startCm = samples[0]['distanceCm']
+        endCm = samples[-1]['distanceCm']
+        sampledDistanceCm = clampDistanceCm(originalTargetCm, startCm, endCm)
+        nearestCm = nearestCrosstieStationDistanceCm(supportTrackData, sampledDistanceCm)
+        snapInfo = {
+            'snapStatus': 'not_requested',
+            'originalTargetCm': originalTargetCm,
+            'snappedTargetCm': sampledDistanceCm,
+            'snapDeltaCm': sampledDistanceCm - originalTargetCm,
+            'requiredClearanceCm': requiredClearanceCm,
+            'nearestCrosstieCm': nearestCm
+        }
+
+    sample = sampleSupportTrackAtDistance(supportTrackData, sampledDistanceCm)
+    if not sample:
+        return None
+
+    sample.update(snapInfo)
+    sample['targetCm'] = sampledDistanceCm
+    sample['distanceCm'] = sampledDistanceCm
+    return sample
 
 
 def supportTrackFrame(trackSample):
@@ -1747,35 +1962,6 @@ def supportTrackInterfaceAnchor(trackSample, frame):
     return addVec(trackSample['spine'], frame.yAxis, -halfSpineHeightCm)
 
 
-def supportTrackInterfaceAnchorForKind(trackSample, frame, supportKind, referencePoint=None):
-    if not frame:
-        return supportTrackInterfaceAnchor(trackSample, frame)
-
-    halfSpineHeightCm = mm_to_cm(SPINE_RECT_HEIGHT_MM) * 0.5
-
-    if supportKind == '180':
-        return addVec(trackSample['spine'], frame.yAxis, halfSpineHeightCm)
-
-    return addVec(trackSample['spine'], frame.yAxis, -halfSpineHeightCm)
-
-
-def supportInterfaceCenterClearanceCm(diameterMeters, supportScaleFactor):
-    beamDiameterCm = diameterMeters * supportScaleFactor * SUPPORT_BEAM_DIAMETER_SCALE
-    return max(
-        SUPPORT_TRACK_INTERFACE_STANDOFF_CM,
-        beamDiameterCm * 0.5 + SUPPORT_TRACK_MIN_CLEARANCE_CM,
-        SUPPORT_TRACK_INTERSECTION_CLEARANCE_CM
-    )
-
-
-def supportInterfaceSideSign(nativeTop, trackAnchor, frame):
-    if not frame:
-        return 1.0
-
-    sideScore = vectorBetween(trackAnchor, nativeTop).dotProduct(frame.xAxis)
-    return 1.0 if sideScore >= 0.0 else -1.0
-
-
 def supportInterfaceKind(interface):
     source = (interface.get('sourcePath', '') + ' ' + str(interface.get('rascType', ''))).lower()
 
@@ -1791,6 +1977,64 @@ def supportInterfaceKind(interface):
     return 'single'
 
 
+def supportTrackRollDegrees(frame):
+    if not frame:
+        return None
+
+    tangent = copyVector(frame.zAxis)
+    trackUp = copyVector(frame.yAxis)
+    if not safeNormalize(tangent) or not safeNormalize(trackUp):
+        return None
+
+    referenceUp = adsk.core.Vector3D.create(0, 0, 1)
+    axial = referenceUp.dotProduct(tangent)
+    referenceUp = adsk.core.Vector3D.create(
+        referenceUp.x - tangent.x * axial,
+        referenceUp.y - tangent.y * axial,
+        referenceUp.z - tangent.z * axial
+    )
+
+    if not safeNormalize(referenceUp):
+        for fallback in (
+            adsk.core.Vector3D.create(0, 1, 0),
+            adsk.core.Vector3D.create(1, 0, 0)
+        ):
+            axial = fallback.dotProduct(tangent)
+            referenceUp = adsk.core.Vector3D.create(
+                fallback.x - tangent.x * axial,
+                fallback.y - tangent.y * axial,
+                fallback.z - tangent.z * axial
+            )
+            if safeNormalize(referenceUp):
+                break
+        else:
+            return None
+
+    cosine = max(-1.0, min(1.0, referenceUp.dotProduct(trackUp)))
+    cross = referenceUp.crossProduct(trackUp)
+    sine = tangent.dotProduct(cross)
+    angleDegrees = math.degrees(math.atan2(sine, cosine))
+    if angleDegrees < 0.0:
+        angleDegrees += 360.0
+
+    return angleDegrees
+
+
+def supportKindForTrackRoll(xmlSupportKind, rollDegrees):
+    if rollDegrees is None:
+        return xmlSupportKind
+
+    normalizedRoll = rollDegrees % 360.0
+    mirroredRoll = min(normalizedRoll, 360.0 - normalizedRoll)
+
+    if mirroredRoll >= SUPPORT_90_MAX_ROLL_DEG:
+        return '180'
+    if mirroredRoll >= SUPPORT_REGULAR_MAX_ROLL_DEG:
+        return '90'
+
+    return xmlSupportKind
+
+
 def straightSupportClearanceDropCm(trackSample):
     clearanceCm = trackSample.get('nearestCrosstieDistanceCm', None)
     if clearanceCm is None or clearanceCm >= SUPPORT_CROSSTIE_CLEARANCE_CM:
@@ -1804,66 +2048,440 @@ def supportOffsetForPrefab(prefabOffsets, prefabIndex):
     return prefabOffsets.get(prefabIndex, zeroVector())
 
 
-def computeSupportPrefabOffsets(supportData, supportTrackSamples, supportScaleFactor):
-    offsets = {}
+def supportBeamLabel(beam):
+    if not beam:
+        return 'None'
+    return f'{beam.get("startId")}->{beam.get("endId")}:{beam.get("kind")}'
+
+
+def supportTupleDistance(a, b):
+    return math.sqrt(
+        (a[0] - b[0]) ** 2
+        + (a[1] - b[1]) ** 2
+        + (a[2] - b[2]) ** 2
+    )
+
+
+def buildSupportBeamAdjacency(supportData):
+    beamsByNode = {}
+    for beam in supportData.get('beams', []):
+        beamsByNode.setdefault((beam['prefabIndex'], beam['startId']), []).append(beam)
+        beamsByNode.setdefault((beam['prefabIndex'], beam['endId']), []).append(beam)
+    return beamsByNode
+
+
+def supportBeamOtherMeters(beam, nodeId):
+    if beam.get('startId') == nodeId:
+        return beam.get('endMeters')
+    if beam.get('endId') == nodeId:
+        return beam.get('startMeters')
+    return None
+
+
+def chooseConnectedSupportBeam(interface, beamsByNode):
+    nodeKey = (interface['prefabIndex'], interface['nodeId'])
+    connected = beamsByNode.get(nodeKey, [])
+    if not connected:
+        supportDebugLog(
+            f'interface plan warning: prefab={interface["prefabIndex"]}, '
+            f'node={interface["nodeId"]} has no connected beam'
+        )
+        return None
+
+    interfaceMeters = interface['pointMeters']
+
+    def beamPriority(beam):
+        otherMeters = supportBeamOtherMeters(beam, interface['nodeId'])
+        if not otherMeters:
+            drop = 0.0
+            length = 0.0
+        else:
+            drop = interfaceMeters[1] - otherMeters[1]
+            length = supportTupleDistance(interfaceMeters, otherMeters)
+        rascScore = 1 if beam.get('kind') == 'rasc_connector' else 0
+        return rascScore, max(drop, 0.0), length
+
+    selected = max(connected, key=beamPriority)
+    if len(connected) > 1:
+        supportDebugLog(
+            f'interface plan ambiguity: prefab={interface["prefabIndex"]}, '
+            f'node={interface["nodeId"]}, selected={supportBeamLabel(selected)}, '
+            f'choices={[supportBeamLabel(beam) for beam in connected]}'
+        )
+
+    return selected
+
+
+def generatedSupportBeamDiameterCm(beam, interface, supportScaleFactor):
+    diameterMeters = beam['diameterMeters'] if beam else interface['diameterMeters']
+    return max(diameterMeters * supportScaleFactor * SUPPORT_BEAM_DIAMETER_SCALE, 0.05)
+
+
+def planSupportInterfaces(supportData, supportTrackSamples, supportScaleFactor, beamsByNode):
+    plans = []
 
     if not supportTrackSamples:
-        return offsets
+        return plans
 
-    for interface in supportData['interfaces']:
-        prefabIndex = interface['prefabIndex']
-        if prefabIndex in offsets:
-            continue
+    for sequenceNumber, interface in enumerate(supportData.get('interfaces', []), start=1):
+        xmlSupportKind = supportInterfaceKind(interface)
+        supportKind = xmlSupportKind
+        selectedBeam = chooseConnectedSupportBeam(interface, beamsByNode)
+        targetCm = interface['centerRailsCoord'] * supportScaleFactor
+        beamDiameterCm = generatedSupportBeamDiameterCm(
+            selectedBeam,
+            interface,
+            supportScaleFactor
+        )
+        bayInfo = findCrosstieBayForDistance(supportTrackSamples, targetCm)
+        connectorSizes = fittedConnectorSizesCm(beamDiameterCm, bayInfo, supportKind)
+        requiredClearanceCm = supportConnectorClearanceCm(
+            connectorSizes['nearTrackFootprintCm'],
+            connectorSizes['squareSizeCm']
+        )
 
-        supportKind = supportInterfaceKind(interface)
-        trackSample = sampleSupportTrack(
+        trackSample = sampleSupportTrackInBay(
             supportTrackSamples,
-            interface['centerRailsCoord'],
-            supportScaleFactor,
-            snapToSafe=True,
-            forceSafe=True
+            targetCm,
+            bayInfo,
+            requiredClearanceCm
         )
         if not trackSample:
+            trackSample = sampleSupportTrack(
+                supportTrackSamples,
+                interface['centerRailsCoord'],
+                supportScaleFactor,
+                requiredClearanceCm=requiredClearanceCm,
+                snapToSafe=True
+            )
+
+        if not trackSample:
+            supportDebugLog(
+                f'interface plan {sequenceNumber}: skipped; no track sample, '
+                f'prefab={interface["prefabIndex"]}, node={interface["nodeId"]}'
+            )
             continue
 
         frame = supportTrackFrame(trackSample)
-        nativeTop = supportPointMetersToFusion(interface['pointMeters'], supportScaleFactor)
-        trackAnchor = supportTrackInterfaceAnchorForKind(trackSample, frame, supportKind, nativeTop)
-        clearanceCm = supportInterfaceCenterClearanceCm(interface['diameterMeters'], supportScaleFactor)
-        clearanceDropCm = 0.0
+        rollDegrees = supportTrackRollDegrees(frame)
+        reclassifiedKind = supportKindForTrackRoll(xmlSupportKind, rollDegrees)
+
+        if reclassifiedKind != supportKind:
+            supportKind = reclassifiedKind
+            connectorSizes = fittedConnectorSizesCm(beamDiameterCm, bayInfo, supportKind)
+            requiredClearanceCm = supportConnectorClearanceCm(
+                connectorSizes['nearTrackFootprintCm'],
+                connectorSizes['squareSizeCm']
+            )
+
+            reclassifiedTrackSample = sampleSupportTrackInBay(
+                supportTrackSamples,
+                targetCm,
+                bayInfo,
+                requiredClearanceCm
+            )
+            if not reclassifiedTrackSample:
+                reclassifiedTrackSample = sampleSupportTrack(
+                    supportTrackSamples,
+                    interface['centerRailsCoord'],
+                    supportScaleFactor,
+                    requiredClearanceCm=requiredClearanceCm,
+                    snapToSafe=True
+                )
+
+            if reclassifiedTrackSample:
+                trackSample = reclassifiedTrackSample
+                frame = supportTrackFrame(trackSample)
+                rollDegrees = supportTrackRollDegrees(frame)
+                supportKind = supportKindForTrackRoll(xmlSupportKind, rollDegrees)
+                connectorSizes = fittedConnectorSizesCm(beamDiameterCm, bayInfo, supportKind)
+                requiredClearanceCm = supportConnectorClearanceCm(
+                    connectorSizes['nearTrackFootprintCm'],
+                    connectorSizes['squareSizeCm']
+                )
+
+        trackAnchor = supportTrackInterfaceAnchor(trackSample, frame)
+        standoffCm = supportRequiredInterfaceStandoffCm(supportKind)
         if frame:
-            desiredTop = addVec(trackAnchor, frame.yAxis, -clearanceCm)
+            desiredTop = addVec(trackAnchor, frame.yAxis, -standoffCm)
         else:
-            desiredTop = adsk.core.Point3D.create(trackAnchor.x, trackAnchor.y, trackAnchor.z - clearanceCm)
+            desiredTop = adsk.core.Point3D.create(trackAnchor.x, trackAnchor.y, trackAnchor.z - standoffCm)
 
-        if supportKind in ('single', 'double', 'straight'):
-            clearanceDropCm = straightSupportClearanceDropCm(trackSample)
-            if clearanceDropCm > 0.0:
-                if frame:
-                    desiredTop = addVec(desiredTop, frame.yAxis, -clearanceDropCm)
-                else:
-                    desiredTop = adsk.core.Point3D.create(
-                        desiredTop.x,
-                        desiredTop.y,
-                        desiredTop.z - clearanceDropCm
-                    )
+        plan = {
+            'sequenceNumber': sequenceNumber,
+            'interface': interface,
+            'supportKind': supportKind,
+            'xmlSupportKind': xmlSupportKind,
+            'rollDegrees': rollDegrees,
+            'selectedBeam': selectedBeam,
+            'trackSample': trackSample,
+            'frame': frame,
+            'trackAnchor': trackAnchor,
+            'desiredSupportTop': desiredTop,
+            'beamDiameterCm': beamDiameterCm,
+            'connectorDiameterCm': connectorSizes['circleDiameterCm'],
+            'circleDiameterCm': connectorSizes['circleDiameterCm'],
+            'collarDiameterCm': connectorSizes['collarDiameterCm'],
+            'squareSizeCm': connectorSizes['squareSizeCm'],
+            'desiredSquareSizeCm': connectorSizes['desiredSquareSizeCm'],
+            'desiredCircleDiameterCm': connectorSizes['desiredCircleDiameterCm'],
+            'desiredCollarDiameterCm': connectorSizes['desiredCollarDiameterCm'],
+            'availableFootprintCm': connectorSizes['availableFootprintCm'],
+            'nearTrackFootprintCm': connectorSizes['nearTrackFootprintCm'],
+            'connectorFitStatus': connectorSizes['fitStatus'],
+            'connectorCapScale': connectorSizes['capScale'],
+            'requiredClearanceCm': requiredClearanceCm,
+            'requiredInterfaceStandoffCm': standoffCm,
+            'bayInfo': bayInfo
+        }
+        plans.append(plan)
 
+        nearestLogCm = trackSample.get(
+            'nearestCrosstieCm',
+            trackSample.get('nearestCrosstieDistanceCm', -1.0)
+        )
+        if nearestLogCm is None:
+            nearestLogCm = -1.0
+        availableFootprintCm = connectorSizes['availableFootprintCm']
+        if availableFootprintCm is None:
+            availableFootprintCm = -1.0
+
+        supportDebugLog(
+            f'interface plan {sequenceNumber}: prefab={interface["prefabIndex"]}, '
+            f'node={interface["nodeId"]}, xmlKind={xmlSupportKind}, '
+            f'kind={supportKind}, rollDeg={(rollDegrees if rollDegrees is not None else -1.0):.6f}, '
+            f'selectedBeam={supportBeamLabel(selectedBeam)}, '
+            f'originalTargetCm={trackSample.get("originalTargetCm", trackSample["targetCm"]):.6f}, '
+            f'prevCrosstieCm={trackSample.get("prevCrosstieCm", -1.0):.6f}, '
+            f'nextCrosstieCm={trackSample.get("nextCrosstieCm", -1.0):.6f}, '
+            f'bayGapCm={trackSample.get("bayGapCm", -1.0):.6f}, '
+            f'bayCenterCm={trackSample.get("bayCenterCm", -1.0):.6f}, '
+            f'snappedTargetCm={trackSample.get("snappedTargetCm", trackSample["targetCm"]):.6f}, '
+            f'snapStatus={trackSample.get("snapStatus", "unknown")}, '
+            f'snapDeltaCm={trackSample.get("snapDeltaCm", 0.0):.6f}, '
+            f'requiredClearanceCm={requiredClearanceCm:.6f}, '
+            f'availableFootprintCm={availableFootprintCm:.6f}, '
+            f'nearestCrosstieCm={nearestLogCm:.6f}, '
+            f'beamDiameterCm={beamDiameterCm:.6f}, '
+            f'desiredSquareSizeCm={connectorSizes["desiredSquareSizeCm"]:.6f}, '
+            f'finalSquareSizeCm={connectorSizes["squareSizeCm"]:.6f}, '
+            f'desiredCircleDiameterCm={connectorSizes["desiredCircleDiameterCm"]:.6f}, '
+            f'finalCircleDiameterCm={connectorSizes["circleDiameterCm"]:.6f}, '
+            f'finalCollarDiameterCm={connectorSizes["collarDiameterCm"]:.6f}, '
+            f'fitStatus={connectorSizes["fitStatus"]}, capScale={connectorSizes["capScale"]:.6f}, '
+            f'requiredInterfaceStandoffCm={standoffCm:.6f}, '
+            f'track={trackSample["folderName"]}[{trackSample["index"]}], t={trackSample["t"]:.6f}'
+        )
+
+    return plans
+
+
+def controllingInterfacePlanForPrefab(plans):
+    return max(
+        plans,
+        key=lambda plan: (
+            plan['interface']['pointMeters'][1],
+            -plan['sequenceNumber']
+        )
+    )
+
+
+def computeSupportPrefabOffsetsFromPlans(supportData, interfacePlans, supportScaleFactor):
+    offsets = {}
+    plansByPrefab = {}
+
+    for plan in interfacePlans:
+        plansByPrefab.setdefault(plan['interface']['prefabIndex'], []).append(plan)
+
+    for prefabIndex, plans in plansByPrefab.items():
+        controllingPlan = controllingInterfacePlanForPrefab(plans)
+        controllingInterface = controllingPlan['interface']
+
+        if len(plans) > 1:
+            otherNodes = [
+                plan['interface']['nodeId']
+                for plan in plans
+                if plan is not controllingPlan
+            ]
+            supportDebugLog(
+                f'prefab {prefabIndex} has {len(plans)} interfaces; '
+                f'controlling node={controllingInterface["nodeId"]}; other nodes={otherNodes}'
+            )
+
+        nativeTop = supportPointMetersToFusion(
+            controllingInterface['pointMeters'],
+            supportScaleFactor
+        )
+        desiredTop = controllingPlan['desiredSupportTop']
         offset = vectorBetween(nativeTop, desiredTop)
         offsets[prefabIndex] = offset
 
         supportDebugLog(
-            f'prefab offset {prefabIndex}: centerRails={interface["centerRailsCoord"]:.6f}m, '
-            f'kind={supportKind}, '
-            f'nativeTop={formatPoint(nativeTop)}, desiredTop={formatPoint(desiredTop)}, '
-            f'offset={formatVector(offset)}, track={trackSample["folderName"]}[{trackSample["index"]}] '
-            f't={trackSample["t"]:.6f}, safeAnchor={trackSample.get("safeAnchor", False)}, '
-            f'between={trackSample.get("betweenCrossties", None)}, '
-            f'snapDeltaCm={trackSample.get("snapDeltaCm", 0.0):.6f}, '
-            f'nearestCrosstieCm={trackSample.get("nearestCrosstieDistanceCm", -1.0):.6f}, '
-            f'clearanceCm={clearanceCm:.6f}, clearanceDropCm={clearanceDropCm:.6f}'
+            f'prefab offset {prefabIndex}: controllingNode={controllingInterface["nodeId"]}, '
+            f'nativeTop={formatPoint(nativeTop)}, desiredSupportTop={formatPoint(desiredTop)}, '
+            f'offset={formatVector(offset)}, '
+            f'snapStatus={controllingPlan["trackSample"].get("snapStatus", "unknown")}'
         )
 
     return offsets
+
+
+def supportBeamEndpointPoint(beam, endpointName, supportScaleFactor, prefabOffsets, floorZ):
+    if endpointName == 'start':
+        return supportPointForKind(
+            beam['startMeters'],
+            beam.get('startKind'),
+            beam['prefabIndex'],
+            supportScaleFactor,
+            prefabOffsets,
+            floorZ
+        )
+
+    return supportPointForKind(
+        beam['endMeters'],
+        beam.get('endKind'),
+        beam['prefabIndex'],
+        supportScaleFactor,
+        prefabOffsets,
+        floorZ
+    )
+
+
+def selectedBeamOtherPoint(beam, nodeId, supportScaleFactor, prefabOffsets, floorZ):
+    if not beam:
+        return None
+
+    if beam.get('startId') == nodeId:
+        return supportBeamEndpointPoint(beam, 'end', supportScaleFactor, prefabOffsets, floorZ)
+
+    if beam.get('endId') == nodeId:
+        return supportBeamEndpointPoint(beam, 'start', supportScaleFactor, prefabOffsets, floorZ)
+
+    return None
+
+
+def buildSupportInterfacePlacements(
+    supportData,
+    interfacePlans,
+    prefabOffsets,
+    supportScaleFactor,
+    floorZ,
+    beamsByNode
+):
+    placements = []
+    endpointOverrides = {}
+
+    for plan in interfacePlans:
+        interface = plan['interface']
+        frame = plan['frame']
+        if not frame:
+            supportDebugLog(
+                f'placement {plan["sequenceNumber"]}: skipped; no track frame, '
+                f'prefab={interface["prefabIndex"]}, node={interface["nodeId"]}'
+            )
+            continue
+
+        offset = supportOffsetForPrefab(prefabOffsets, interface['prefabIndex'])
+        supportTop = supportPointMetersToFusion(
+            interface['pointMeters'],
+            supportScaleFactor,
+            offset
+        )
+        trackAnchor = plan['trackAnchor']
+        padNormal = scaledVector(frame.yAxis, -1.0)
+        padAcross = copyVector(frame.xAxis)
+        padAlongTrack = copyVector(frame.zAxis)
+        padStandoffCm = supportPadStandoffCm(plan['supportKind'])
+        collarLengthCm = supportCollarLengthCm(plan['supportKind'])
+        circleCenter = addVec(trackAnchor, padNormal, padStandoffCm)
+        neckEnd = addVec(circleCenter, padNormal, collarLengthCm)
+        beamEnd = supportTop
+
+        selectedBeam = plan['selectedBeam']
+        otherPoint = selectedBeamOtherPoint(
+            selectedBeam,
+            interface['nodeId'],
+            supportScaleFactor,
+            prefabOffsets,
+            floorZ
+        )
+
+        if otherPoint:
+            beamAxis = vectorBetween(beamEnd, otherPoint)
+            beamAxisSource = 'selected_beam'
+        else:
+            beamAxis = vectorBetween(neckEnd, beamEnd)
+            beamAxisSource = 'neck_to_beam_fallback'
+
+        if not safeNormalize(beamAxis):
+            beamAxis = copyVector(padNormal)
+            beamAxisSource = 'pad_normal_fallback'
+
+        collarStart = addVec(circleCenter, padNormal, -SUPPORT_CONNECTOR_OVERLAP_CM)
+        collarEnd = addVec(neckEnd, padNormal, SUPPORT_CONNECTOR_OVERLAP_CM)
+        angledStart = addVec(neckEnd, padNormal, -SUPPORT_CONNECTOR_OVERLAP_CM)
+        angledEnd = addVec(beamEnd, beamAxis, SUPPORT_CONNECTOR_OVERLAP_CM)
+        beamExtensionCm = 0.0
+        endpointOverrides[(interface['prefabIndex'], interface['nodeId'])] = beamEnd
+
+        placement = {
+            'sequenceNumber': plan['sequenceNumber'],
+            'interface': interface,
+            'supportKind': plan['supportKind'],
+            'xmlSupportKind': plan['xmlSupportKind'],
+            'rollDegrees': plan['rollDegrees'],
+            'trackSample': plan['trackSample'],
+            'frame': frame,
+            'trackAnchor': trackAnchor,
+            'padNormal': padNormal,
+            'padAcross': padAcross,
+            'padAlongTrack': padAlongTrack,
+            'beamDiameterCm': plan['beamDiameterCm'],
+            'connectorDiameterCm': plan['connectorDiameterCm'],
+            'circleDiameterCm': plan['circleDiameterCm'],
+            'collarDiameterCm': plan['collarDiameterCm'],
+            'squareSizeCm': plan['squareSizeCm'],
+            'padStandoffCm': padStandoffCm,
+            'collarLengthCm': collarLengthCm,
+            'circleCenter': circleCenter,
+            'collarStart': collarStart,
+            'collarEnd': collarEnd,
+            'neckEnd': neckEnd,
+            'angledStart': angledStart,
+            'angledEnd': angledEnd,
+            'supportTop': supportTop,
+            'beamEnd': beamEnd,
+            'beamAxis': beamAxis,
+            'beamAxisSource': beamAxisSource,
+            'otherBeamEndpoint': otherPoint,
+            'selectedBeam': selectedBeam,
+            'beamExtensionCm': beamExtensionCm,
+            'requiredInterfaceStandoffCm': plan['requiredInterfaceStandoffCm']
+        }
+        placements.append(placement)
+
+        neckToBeamCm = neckEnd.distanceTo(beamEnd)
+        supportDebugLog(
+            f'placement {plan["sequenceNumber"]}: prefab={interface["prefabIndex"]}, '
+            f'node={interface["nodeId"]}, selectedBeam={supportBeamLabel(selectedBeam)}, '
+            f'beamAxisSource={beamAxisSource}, trackAnchor={formatPoint(trackAnchor)}, '
+            f'circleCenter={formatPoint(circleCenter)}, neckEnd={formatPoint(neckEnd)}, '
+            f'collarStart={formatPoint(collarStart)}, collarEnd={formatPoint(collarEnd)}, '
+            f'angledStart={formatPoint(angledStart)}, angledEnd={formatPoint(angledEnd)}, '
+            f'beamRawTop={formatPoint(supportTop)}, beamEnd={formatPoint(beamEnd)}, '
+            f'otherBeamEndpoint={formatPoint(otherPoint)}, padNormal={formatVector(padNormal)}, '
+            f'padAcross={formatVector(padAcross)}, padAlongTrack={formatVector(padAlongTrack)}, '
+            f'beamAxis={formatVector(beamAxis)}, '
+            f'trackAnchorToCircleCm={trackAnchor.distanceTo(circleCenter):.6f}, '
+            f'circleToNeckCm={circleCenter.distanceTo(neckEnd):.6f}, '
+            f'neckToBeamCm={neckToBeamCm:.6f}, '
+            f'padStandoffCm={padStandoffCm:.6f}, collarLengthCm={collarLengthCm:.6f}, '
+            f'requiredInterfaceStandoffCm={plan["requiredInterfaceStandoffCm"]:.6f}, '
+            f'beamExtensionCm={beamExtensionCm:.6f}, '
+            f'connectorOverlapCm={SUPPORT_CONNECTOR_OVERLAP_CM:.6f}'
+        )
+
+    return placements, endpointOverrides
 
 
 # ============================================================
@@ -2117,23 +2735,25 @@ def readSupportXmlData(xmlPath):
 
 
 def footerPadExitPoint(outerPoint, footerCenter, radiusCm, heightCm):
+    eps = 0.000001
     topZ = footerCenter.z + heightCm * 0.5
     bottomZ = footerCenter.z - heightCm * 0.5
     direction = vectorBetween(outerPoint, footerCenter)
     candidates = []
 
-    if abs(direction.z) > 0.000001:
+    if outerPoint.z > topZ + eps and direction.z < -eps:
         topT = (topZ - outerPoint.z) / direction.z
         if 0.0 <= topT <= 1.0:
             topPoint = addVec(outerPoint, direction, topT)
-            if horizontalDistanceTo(topPoint, footerCenter) <= radiusCm + 0.000001:
-                candidates.append((topT, topPoint))
+            if horizontalDistanceTo(topPoint, footerCenter) <= radiusCm + eps:
+                candidates.append((topT, topPoint, 'top'))
 
+    if outerPoint.z < bottomZ - eps and direction.z > eps:
         bottomT = (bottomZ - outerPoint.z) / direction.z
-        if bottomT >= 0.0:
+        if 0.0 <= bottomT <= 1.0:
             bottomPoint = addVec(outerPoint, direction, bottomT)
-            if horizontalDistanceTo(bottomPoint, footerCenter) <= radiusCm + 0.000001:
-                candidates.append((bottomT, bottomPoint))
+            if horizontalDistanceTo(bottomPoint, footerCenter) <= radiusCm + eps:
+                candidates.append((bottomT, bottomPoint, 'bottom'))
 
     dx = outerPoint.x - footerCenter.x
     dy = outerPoint.y - footerCenter.y
@@ -2148,16 +2768,81 @@ def footerPadExitPoint(outerPoint, footerCenter, radiusCm, heightCm):
         if discriminant >= 0.0:
             root = math.sqrt(discriminant)
             for t in ((-b - root) / (2.0 * a), (-b + root) / (2.0 * a)):
-                if t >= 0.0:
+                if 0.0 <= t <= 1.0:
                     point = addVec(outerPoint, direction, t)
-                    if bottomZ - 0.000001 <= point.z <= topZ + 0.000001:
-                        candidates.append((t, point))
+                    if bottomZ - eps <= point.z <= topZ + eps:
+                        candidates.append((t, point, 'side'))
 
     if candidates:
-        candidates.sort(key=lambda item: item[0], reverse=True)
-        return candidates[0][1]
+        candidates.sort(key=lambda item: item[0])
+        return candidates[0][1], candidates[0][2], candidates
 
-    return adsk.core.Point3D.create(footerCenter.x, footerCenter.y, bottomZ)
+    def clampedCapPoint(zValue):
+        dx = outerPoint.x - footerCenter.x
+        dy = outerPoint.y - footerCenter.y
+        distance = math.sqrt(dx * dx + dy * dy)
+        if distance > radiusCm and distance > eps:
+            scale = radiusCm / distance
+            return adsk.core.Point3D.create(
+                footerCenter.x + dx * scale,
+                footerCenter.y + dy * scale,
+                zValue
+            )
+        return adsk.core.Point3D.create(outerPoint.x, outerPoint.y, zValue)
+
+    if outerPoint.z >= topZ:
+        return clampedCapPoint(topZ), 'fallback_top', candidates
+
+    if outerPoint.z <= bottomZ:
+        return clampedCapPoint(bottomZ), 'fallback_bottom', candidates
+
+    distance = math.sqrt(dx * dx + dy * dy)
+    if distance > eps:
+        scale = radiusCm / distance
+        sideZ = clampDistanceCm(outerPoint.z, bottomZ, topZ)
+        return adsk.core.Point3D.create(
+            footerCenter.x + dx * scale,
+            footerCenter.y + dy * scale,
+            sideZ
+        ), 'fallback_side', candidates
+
+    return adsk.core.Point3D.create(footerCenter.x + radiusCm, footerCenter.y, outerPoint.z), 'fallback_side', candidates
+
+
+def clampPointInsideFooterCylinder(point, footerCenter, radiusCm, heightCm):
+    eps = 0.000001
+    topZ = footerCenter.z + heightCm * 0.5
+    bottomZ = footerCenter.z - heightCm * 0.5
+    zValue = clampDistanceCm(point.z, bottomZ, topZ)
+    dx = point.x - footerCenter.x
+    dy = point.y - footerCenter.y
+    distance = math.sqrt(dx * dx + dy * dy)
+
+    if distance > radiusCm and distance > eps:
+        scale = radiusCm / distance
+        return adsk.core.Point3D.create(
+            footerCenter.x + dx * scale,
+            footerCenter.y + dy * scale,
+            zValue
+        )
+
+    return adsk.core.Point3D.create(point.x, point.y, zValue)
+
+
+def embeddedFooterExitPoint(surfacePoint, outerPoint, footerCenter, radiusCm, heightCm):
+    ray = vectorBetween(outerPoint, footerCenter)
+    if not safeNormalize(ray):
+        return surfacePoint
+
+    embeddedPoint = addVec(surfacePoint, ray, SUPPORT_FOOTER_BEAM_EMBED_CM)
+    return clampPointInsideFooterCylinder(embeddedPoint, footerCenter, radiusCm, heightCm)
+
+
+def formatFooterCandidates(candidates):
+    pieces = []
+    for tValue, point, surface in candidates[:6]:
+        pieces.append(f'{surface}@{tValue:.6f}:{formatPoint(point)}')
+    return '[' + '; '.join(pieces) + ']'
 
 
 def clampPointToFloor(point, floorZ):
@@ -2176,25 +2861,33 @@ def clipSupportBeamToFooterExit(beam, startPoint, endPoint, supportScaleFactor, 
 
     if beam.get('startKind') == 'footernode':
         footerCenter = startPoint
-        clippedStart = clampPointToFloor(
-            footerPadExitPoint(endPoint, footerCenter, radiusCm, heightCm),
-            floorZ
-        )
+        rawStart, surface, candidates = footerPadExitPoint(endPoint, footerCenter, radiusCm, heightCm)
+        clippedStart = embeddedFooterExitPoint(rawStart, endPoint, footerCenter, radiusCm, heightCm)
+        clippedStart = clampPointToFloor(clippedStart, floorZ)
+        topZ = footerCenter.z + heightCm * 0.5
+        bottomZ = footerCenter.z - heightCm * 0.5
         supportDebugLog(
             f'footer exit start beam={beam["startId"]}->{beam["endId"]}: '
-            f'center={formatPoint(footerCenter)}, exit={formatPoint(clippedStart)}, floorZ={floorZ}'
+            f'surface={surface}, center={formatPoint(footerCenter)}, outer={formatPoint(endPoint)}, '
+            f'candidates={formatFooterCandidates(candidates)}, rawExit={formatPoint(rawStart)}, '
+            f'embeddedExit={formatPoint(clippedStart)}, floorZ={floorZ}, '
+            f'topZ={topZ:.6f}, bottomZ={bottomZ:.6f}, radius={radiusCm:.6f}'
         )
         startPoint = clippedStart
 
     if beam.get('endKind') == 'footernode':
         footerCenter = endPoint
-        clippedEnd = clampPointToFloor(
-            footerPadExitPoint(startPoint, footerCenter, radiusCm, heightCm),
-            floorZ
-        )
+        rawEnd, surface, candidates = footerPadExitPoint(startPoint, footerCenter, radiusCm, heightCm)
+        clippedEnd = embeddedFooterExitPoint(rawEnd, startPoint, footerCenter, radiusCm, heightCm)
+        clippedEnd = clampPointToFloor(clippedEnd, floorZ)
+        topZ = footerCenter.z + heightCm * 0.5
+        bottomZ = footerCenter.z - heightCm * 0.5
         supportDebugLog(
             f'footer exit end beam={beam["startId"]}->{beam["endId"]}: '
-            f'center={formatPoint(footerCenter)}, exit={formatPoint(clippedEnd)}, floorZ={floorZ}'
+            f'surface={surface}, center={formatPoint(footerCenter)}, outer={formatPoint(startPoint)}, '
+            f'candidates={formatFooterCandidates(candidates)}, rawExit={formatPoint(rawEnd)}, '
+            f'embeddedExit={formatPoint(clippedEnd)}, floorZ={floorZ}, '
+            f'topZ={topZ:.6f}, bottomZ={bottomZ:.6f}, radius={radiusCm:.6f}'
         )
         endPoint = clippedEnd
 
@@ -2205,12 +2898,12 @@ def createSupportBeamBody(component, startPoint, endPoint, diameterCm, name):
     distance = startPoint.distanceTo(endPoint)
     if distance < 0.000001 or diameterCm <= 0:
         debugLog(f'createSupportBeamBody {name}: skipped')
-        return None
+        return False
 
     tangent = vectorBetween(startPoint, endPoint)
     if not safeNormalize(tangent):
         debugLog(f'createSupportBeamBody {name}: bad tangent')
-        return None
+        return False
 
     try:
         centerPoint = midpoint(startPoint, endPoint)
@@ -2223,7 +2916,7 @@ def createSupportBeamBody(component, startPoint, endPoint, diameterCm, name):
 
         if not plane:
             debugLog(f'createSupportBeamBody {name}: could not create plane')
-            return None
+            return False
 
         sketch, profile = createCircleProfileOnPlane(
             component,
@@ -2235,438 +2928,19 @@ def createSupportBeamBody(component, startPoint, endPoint, diameterCm, name):
 
         if not profile:
             debugLog(f'createSupportBeamBody {name}: profile failed')
-            return None
+            return False
 
-        return extrudeProfile(
+        extrude = extrudeProfile(
             component,
             profile,
             distance,
             adsk.fusion.FeatureOperations.NewBodyFeatureOperation,
             name
         )
+        return extrude is not None
     except Exception as err:
         debugLog(f'createSupportBeamBody {name}: failed: {err}\n{traceback.format_exc()}')
-        return None
-
-
-def bodyFromFeature(feature):
-    try:
-        if feature and feature.bodies and feature.bodies.count > 0:
-            return feature.bodies.item(0)
-    except:
-        pass
-    return None
-
-
-def createChildComponent(parentComponent, name):
-    identity = adsk.core.Matrix3D.create()
-    occurrence = parentComponent.occurrences.addNewComponent(identity)
-    childComponent = adsk.fusion.Component.cast(occurrence.component)
-    childComponent.name = name
-    try:
-        occurrence.name = name
-    except:
-        pass
-    return childComponent
-
-
-def collectComponentBodies(component, bodies=None):
-    if bodies is None:
-        bodies = []
-
-    if not component:
-        return bodies
-
-    try:
-        for i in range(component.bRepBodies.count):
-            body = component.bRepBodies.item(i)
-            if body:
-                bodies.append(body)
-    except:
-        pass
-
-    try:
-        for i in range(component.occurrences.count):
-            occurrence = component.occurrences.item(i)
-            collectComponentBodies(occurrence.component, bodies)
-    except:
-        pass
-
-    return bodies
-
-
-def bodyBoundingBox(body):
-    try:
-        return body.boundingBox
-    except:
-        return None
-
-
-def bodyCenterPoint(body):
-    bbox = bodyBoundingBox(body)
-    if not bbox:
-        return None
-
-    return midpoint(bbox.minPoint, bbox.maxPoint)
-
-
-def boundingBoxesOverlap(a, b, paddingCm=0.0):
-    if not a or not b:
         return False
-
-    return not (
-        a.maxPoint.x + paddingCm < b.minPoint.x or a.minPoint.x - paddingCm > b.maxPoint.x
-        or a.maxPoint.y + paddingCm < b.minPoint.y or a.minPoint.y - paddingCm > b.maxPoint.y
-        or a.maxPoint.z + paddingCm < b.minPoint.z or a.minPoint.z - paddingCm > b.maxPoint.z
-    )
-
-
-def bodyPhysicalVolume(body):
-    try:
-        props = body.physicalProperties
-        return props.volume
-    except:
-        try:
-            props = body.getPhysicalProperties(
-                adsk.fusion.CalculationAccuracy.LowCalculationAccuracy
-            )
-            return props.volume
-        except:
-            return None
-
-
-def fusionBodiesIntersect(bodyA, bodyB):
-    boxA = bodyBoundingBox(bodyA)
-    boxB = bodyBoundingBox(bodyB)
-    if not boundingBoxesOverlap(boxA, boxB):
-        return False
-
-    try:
-        tempMgr = adsk.fusion.TemporaryBRepManager.get()
-        tempA = tempMgr.copy(bodyA)
-        tempB = tempMgr.copy(bodyB)
-        tempMgr.booleanOperation(
-            tempA,
-            tempB,
-            adsk.fusion.BooleanTypes.IntersectionBooleanType
-        )
-        volume = bodyPhysicalVolume(tempA)
-        if volume is not None:
-            return volume > SUPPORT_TRACK_INTERSECTION_EPSILON_CM3
-    except Exception as err:
-        supportDebugLog(f'fusionBodiesIntersect: temporary BRep intersect failed: {err}')
-
-    return True
-
-
-def bodyIntersectsAnyTrackBody(supportBody, trackBodies):
-    supportBox = bodyBoundingBox(supportBody)
-    if not supportBox:
-        return False, None
-
-    for trackBody in trackBodies or []:
-        trackBox = bodyBoundingBox(trackBody)
-        if not boundingBoxesOverlap(supportBox, trackBox):
-            continue
-
-        if fusionBodiesIntersect(supportBody, trackBody):
-            return True, trackBody
-
-    return False, None
-
-
-def bodyTooCloseToAnyTrackBody(supportBody, trackBodies, clearanceCm):
-    supportBox = bodyBoundingBox(supportBody)
-    if not supportBox:
-        return False, None
-
-    for trackBody in trackBodies or []:
-        trackBox = bodyBoundingBox(trackBody)
-        if boundingBoxesOverlap(supportBox, trackBox, clearanceCm):
-            return True, trackBody
-
-    return False, None
-
-
-def bodyViolatesTrackClearance(supportBody, trackBodies):
-    intersects, trackBody = bodyIntersectsAnyTrackBody(supportBody, trackBodies)
-    if intersects:
-        return True, True, trackBody
-
-    tooClose, trackBody = bodyTooCloseToAnyTrackBody(
-        supportBody,
-        trackBodies,
-        SUPPORT_TRACK_INTERSECTION_CLEARANCE_CM
-    )
-    return tooClose, False, trackBody
-
-
-def moveBodyByVector(component, body, direction, distanceCm, name):
-    try:
-        owningComponent = component
-        try:
-            if body.parentComponent:
-                owningComponent = body.parentComponent
-        except:
-            pass
-
-        moveVector = adsk.core.Vector3D.create(
-            direction.x * distanceCm,
-            direction.y * distanceCm,
-            direction.z * distanceCm
-        )
-        transform = adsk.core.Matrix3D.create()
-        transform.translation = moveVector
-
-        bodies = adsk.core.ObjectCollection.create()
-        bodies.add(body)
-
-        moveFeatures = owningComponent.features.moveFeatures
-        try:
-            moveInput = moveFeatures.createInput2(bodies, transform)
-        except:
-            moveInput = moveFeatures.createInput(bodies, transform)
-
-        feature = moveFeatures.add(moveInput)
-        if feature:
-            feature.name = name
-        else:
-            supportDebugLog(f'moveBodyByVector {name}: moveFeatures.add returned None; rechecking body position')
-        return True
-    except Exception as err:
-        supportDebugLog(f'moveBodyByVector {name}: failed: {err}')
-        return False
-
-
-def nearestTrackSampleForPoint(supportTrackSamples, point):
-    if not point or not supportTrackSamples:
-        return None
-
-    samples = supportTrackSamples.get('samples', []) if isinstance(supportTrackSamples, dict) else supportTrackSamples
-    if not samples:
-        return None
-
-    bestSample = None
-    bestDistance = None
-    for sample in samples:
-        samplePoint = sample.get('spine') or sample.get('center') or sample.get('left')
-        if not samplePoint:
-            continue
-        distance = point.distanceTo(samplePoint)
-        if bestDistance is None or distance < bestDistance:
-            bestDistance = distance
-            bestSample = sample
-
-    return bestSample
-
-
-def supportClearanceMoveDirection(body, supportTrackSamples):
-    center = bodyCenterPoint(body)
-    sample = nearestTrackSampleForPoint(supportTrackSamples, center)
-    frame = supportTrackFrame(sample) if sample else None
-    if not center or not sample or not frame:
-        return adsk.core.Vector3D.create(1.0, 0.0, 0.0)
-
-    trackPoint = sample.get('spine') or frame.origin
-    away = vectorBetween(trackPoint, center)
-    tangentComponent = away.dotProduct(frame.zAxis)
-    direction = adsk.core.Vector3D.create(
-        away.x - frame.zAxis.x * tangentComponent,
-        away.y - frame.zAxis.y * tangentComponent,
-        away.z - frame.zAxis.z * tangentComponent
-    )
-
-    if not safeNormalize(direction):
-        direction = adsk.core.Vector3D.create(frame.yAxis.x, frame.yAxis.y, frame.yAxis.z)
-        if not safeNormalize(direction):
-            direction = adsk.core.Vector3D.create(frame.xAxis.x, frame.xAxis.y, frame.xAxis.z)
-            safeNormalize(direction)
-
-    return direction
-
-
-def resolveSupportTrackIntersections(component, supportBodies, trackBodies, supportTrackSamples):
-    supportDebugLog(
-        f'resolveSupportTrackIntersections begin: '
-        f'supportBodies={len(supportBodies) if supportBodies else 0}, '
-        f'trackBodies={len(trackBodies) if trackBodies else 0}, '
-        f'clearance={SUPPORT_TRACK_INTERSECTION_CLEARANCE_CM:.6f}, '
-        f'step={SUPPORT_TRACK_INTERSECTION_STEP_CM:.6f}, '
-        f'maxSteps={SUPPORT_TRACK_INTERSECTION_MAX_STEPS}'
-    )
-
-    if not supportBodies or not trackBodies:
-        supportDebugLog(
-            f'resolveSupportTrackIntersections skipped: '
-            f'supportBodies={len(supportBodies) if supportBodies else 0}, '
-            f'trackBodies={len(trackBodies) if trackBodies else 0}'
-        )
-        return 0
-
-    movedCount = 0
-    for index, body in enumerate(supportBodies, start=1):
-        try:
-            bodyName = body.name
-        except:
-            bodyName = f'support_body_{index:03d}'
-
-        if index == 1 or index % 10 == 0:
-            supportDebugLog(
-                f'resolveSupportTrackIntersections progress: body={index}/{len(supportBodies)}, '
-                f'name={bodyName}'
-            )
-
-        violatesClearance, intersects, trackBody = bodyViolatesTrackClearance(body, trackBodies)
-        if not violatesClearance:
-            continue
-
-        direction = supportClearanceMoveDirection(body, supportTrackSamples)
-        supportDebugLog(
-            f'resolveSupportTrackIntersections {bodyName}: initial violation=True, '
-            f'intersects={intersects}, clearance={SUPPORT_TRACK_INTERSECTION_CLEARANCE_CM:.6f}, '
-            f'direction={formatVector(direction)}, step={SUPPORT_TRACK_INTERSECTION_STEP_CM:.6f}, '
-            f'maxSteps={SUPPORT_TRACK_INTERSECTION_MAX_STEPS}'
-        )
-
-        movedDistance = 0.0
-        cleared = False
-        for stepIndex in range(1, SUPPORT_TRACK_INTERSECTION_MAX_STEPS + 1):
-            moveSucceeded = moveBodyByVector(
-                component,
-                body,
-                direction,
-                SUPPORT_TRACK_INTERSECTION_STEP_CM,
-                f'{bodyName}_track_clearance_move_{stepIndex:02d}'
-            )
-            if not moveSucceeded:
-                supportDebugLog(
-                    f'resolveSupportTrackIntersections {bodyName}: '
-                    f'step={stepIndex}, move failed; stopping this body'
-                )
-                break
-            movedDistance += SUPPORT_TRACK_INTERSECTION_STEP_CM
-
-            violatesClearance, intersects, trackBody = bodyViolatesTrackClearance(body, trackBodies)
-            supportDebugLog(
-                f'resolveSupportTrackIntersections {bodyName}: '
-                f'step={stepIndex}, moved={movedDistance:.6f}, '
-                f'intersects={intersects}, violatesClearance={violatesClearance}'
-            )
-            if not violatesClearance:
-                cleared = True
-                break
-
-        if movedDistance > 0.0:
-            movedCount += 1
-        if not cleared:
-            supportDebugLog(
-                f'resolveSupportTrackIntersections {bodyName}: still violates clearance after '
-                f'{movedDistance:.6f}cm; leaving best moved position'
-            )
-
-    supportDebugLog(f'resolveSupportTrackIntersections complete: movedBodies={movedCount}')
-    flushSupportDebugLogBuffer()
-    return movedCount
-
-
-def registerSupportBeamDebugRecord(recordsByNodeId, nodeId, endpoint, otherEndpoint, diameterCm, name):
-    if not nodeId or not endpoint or not otherEndpoint:
-        return
-
-    key = str(nodeId)
-    if key not in recordsByNodeId:
-        recordsByNodeId[key] = []
-
-    recordsByNodeId[key].append({
-        'endpoint': endpoint,
-        'otherEndpoint': otherEndpoint,
-        'diameterCm': diameterCm,
-        'name': name
-    })
-
-
-def nearestSupportBeamDebugRecord(recordsByNodeId, nodeId, targetPoint):
-    records = recordsByNodeId.get(str(nodeId), []) if recordsByNodeId else []
-    bestRecord = None
-    bestDistance = None
-
-    for record in records:
-        endpoint = record.get('endpoint')
-        if not endpoint:
-            continue
-
-        distance = endpoint.distanceTo(targetPoint)
-        if bestDistance is None or distance < bestDistance:
-            bestDistance = distance
-            bestRecord = record
-
-    return bestRecord, bestDistance
-
-
-def trimSupportBeamBelowFloor(component, beamFeature, startPoint, endPoint, diameterCm, floorZ, name):
-    if floorZ is None or not beamFeature:
-        return None
-
-    body = bodyFromFeature(beamFeature)
-    if not body:
-        supportDebugLog(f'trimSupportBeamBelowFloor {name}: skipped; no body')
-        return None
-
-    lowCenterZ = min(startPoint.z, endPoint.z)
-    cutDepth = max(diameterCm * 3.0, floorZ - lowCenterZ + diameterCm * 3.0, 0.5)
-    center = midpoint(startPoint, endPoint)
-    planeCenter = adsk.core.Point3D.create(center.x, center.y, floorZ)
-    xAxis = adsk.core.Vector3D.create(1, 0, 0)
-    yAxis = adsk.core.Vector3D.create(0, 1, 0)
-    span = max(
-        abs(startPoint.x - endPoint.x),
-        abs(startPoint.y - endPoint.y),
-        diameterCm,
-        1.0
-    ) + diameterCm * 6.0 + 2.0
-
-    try:
-        plane = createPlaneByThreePoints(
-            component,
-            planeCenter,
-            addVec(planeCenter, xAxis, 1.0),
-            addVec(planeCenter, yAxis, 1.0),
-            f'{name}_floor_cut_plane'
-        )
-        if not plane:
-            supportDebugLog(f'trimSupportBeamBelowFloor {name}: skipped; cut plane failed')
-            return None
-
-        sketch, profile = createCenteredRectangleProfileOnPlane(
-            component,
-            plane,
-            planeCenter,
-            xAxis,
-            yAxis,
-            span,
-            span,
-            f'{name}_floor_cut_profile'
-        )
-        if not profile:
-            supportDebugLog(f'trimSupportBeamBelowFloor {name}: skipped; cut profile failed')
-            return None
-
-        cutFeature = extrudeCutProfile(
-            component,
-            profile,
-            cutDepth,
-            f'{name}_floor_trim',
-            body
-        )
-        supportDebugLog(
-            f'trimSupportBeamBelowFloor {name}: '
-            f'floorZ={floorZ:.6f}, cutDepth={cutDepth:.6f}, span={span:.6f}, '
-            f'success={cutFeature is not None}'
-        )
-        return cutFeature
-    except Exception as err:
-        supportDebugLog(f'trimSupportBeamBelowFloor {name}: failed: {err}\n{traceback.format_exc()}')
-        return None
 
 
 def closestPointTo(target, points):
@@ -2685,531 +2959,38 @@ def closestPointTo(target, points):
 def supportInterfaceStartPoint(interface, supportTop, trackAnchor, frame, sizeCm):
     supportKind = supportInterfaceKind(interface)
 
+    if frame and supportKind == '90':
+        sideOffset = sizeCm * 0.5
+        return closestPointTo(trackAnchor, [
+            addVec(supportTop, frame.xAxis, sideOffset),
+            addVec(supportTop, frame.xAxis, -sideOffset)
+        ])
+
     if frame and supportKind == '180':
         return addVec(supportTop, frame.yAxis, -sizeCm * 0.5)
 
     return supportTop
 
 
-def supportInterfaceProfileAxes(startPoint, endPoint, frame, supportKind):
-    if frame:
-        return frame.xAxis, frame.zAxis
-
-    tangent = vectorBetween(startPoint, endPoint)
-    if not safeNormalize(tangent):
-        return None, None
-
-    xAxis = perpendicularUnitVector(tangent)
-    if not xAxis:
-        return None, None
-
-    yAxis = tangent.crossProduct(xAxis)
-    if not safeNormalize(yAxis):
-        return None, None
-
-    return xAxis, yAxis
-
-
-def supportInterfaceTrackSizeCm(supportKind):
-    return mm_to_cm(SPINE_RECT_WIDTH_MM)
-
-
-def supportInterfaceStartProfile(
-    component,
-    plane,
-    startPoint,
-    xAxis,
-    yAxis,
-    startSizeCm,
-    supportKind,
-    name
-):
-    if supportKind in ('single', 'double', 'straight'):
-        return createCircleProfileOnPlane(
-            component,
-            plane,
-            startPoint,
-            startSizeCm,
-            f'{name}_start_tube_profile'
-        )
-
-    return createCenteredRectangleProfileOnPlane(
-        component,
-        plane,
-        startPoint,
-        xAxis,
-        yAxis,
-        startSizeCm,
-        startSizeCm,
-        f'{name}_start_profile'
-    )
-
-
-def supportInterfaceTransitionPoint(startPoint, endPoint, startSizeCm):
-    direction = vectorBetween(startPoint, endPoint)
-    distance = direction.length
-    if distance < 0.000001:
-        return None
-
-    direction.normalize()
-    transitionDistance = max(
-        SUPPORT_INTERFACE_TRANSITION_STANDOFF_CM,
-        startSizeCm * 0.75
-    )
-    transitionDistance = min(transitionDistance, distance * 0.75)
-    if transitionDistance < 0.000001:
-        return None
-
-    return addVec(startPoint, direction, transitionDistance)
-
-
-def supportConnectorEmbedPoint(startPoint, transitionPoint, diameterCm):
-    direction = vectorBetween(transitionPoint, startPoint)
-    if not safeNormalize(direction):
-        return startPoint
-
-    return addVec(startPoint, direction, max(diameterCm * 0.5, SUPPORT_TRACK_MIN_CLEARANCE_CM))
-
-
-def supportInterfaceFinalOverlapPoint(extensionPoint, beamPoint, diameterCm):
-    direction = vectorBetween(extensionPoint, beamPoint)
-    if not safeNormalize(direction):
-        return beamPoint
-
-    overlapCm = max(diameterCm * 0.55, SUPPORT_TRACK_MIN_CLEARANCE_CM)
-    return addVec(beamPoint, direction, overlapCm)
-
-
-def supportConnectorDiameterCm(startSizeCm, beamDiameterCm=None):
-    candidates = [
-        startSizeCm * SUPPORT_CONNECTOR_DIAMETER_SCALE,
-        startSizeCm
-    ]
-    if beamDiameterCm and beamDiameterCm > 0:
-        candidates.append(beamDiameterCm * SUPPORT_CONNECTOR_DIAMETER_SCALE)
-
-    diameter = min(candidates)
-    return max(SUPPORT_CONNECTOR_MIN_DIAMETER_CM, diameter)
-
-
-def vectorComponentPerpendicularToAxis(fromPoint, toPoint, axis):
-    vec = vectorBetween(fromPoint, toPoint)
-    axisCopy = adsk.core.Vector3D.create(axis.x, axis.y, axis.z)
-    if not safeNormalize(axisCopy):
-        return None
-
-    axial = vec.dotProduct(axisCopy)
-    return adsk.core.Vector3D.create(
-        vec.x - axisCopy.x * axial,
-        vec.y - axisCopy.y * axial,
-        vec.z - axisCopy.z * axial
-    )
-
-
-def supportBeamContactPoint(connectorStart, beamEndpoint, beamOtherEndpoint, beamDiameterCm):
-    if not connectorStart or not beamEndpoint or not beamOtherEndpoint:
-        return beamEndpoint
-
-    beamAxis = vectorBetween(beamOtherEndpoint, beamEndpoint)
-    if not safeNormalize(beamAxis):
-        return beamEndpoint
-
-    fallbackMode = 'perpendicular'
-    radial = vectorComponentPerpendicularToAxis(beamEndpoint, connectorStart, beamAxis)
-    if not radial or not safeNormalize(radial):
-        fallbackMode = 'connector_projection'
-        connectorDirection = vectorBetween(connectorStart, beamEndpoint)
-        radial = adsk.core.Vector3D.create(
-            connectorDirection.x,
-            connectorDirection.y,
-            connectorDirection.z
-        )
-        axial = radial.dotProduct(beamAxis)
-        radial = adsk.core.Vector3D.create(
-            radial.x - beamAxis.x * axial,
-            radial.y - beamAxis.y * axial,
-            radial.z - beamAxis.z * axial
-        )
-        if not safeNormalize(radial):
-            fallbackMode = 'axis_perpendicular'
-            radial = perpendicularUnitVector(beamAxis)
-            if not radial:
-                return beamEndpoint
-
-    radiusCm = max(beamDiameterCm * 0.5, SUPPORT_TRACK_MIN_CLEARANCE_CM)
-    contactPoint = addVec(beamEndpoint, radial, radiusCm * 0.85)
-    supportDebugLog(
-        f'supportBeamContactPoint: start={formatPoint(connectorStart)}, '
-        f'beamEndpoint={formatPoint(beamEndpoint)}, beamOther={formatPoint(beamOtherEndpoint)}, '
-        f'axis={formatVector(beamAxis)}, radial={formatVector(radial)}, '
-        f'beamDiameter={beamDiameterCm:.6f}, radius={radiusCm:.6f}, '
-        f'contact={formatPoint(contactPoint)}, mode={fallbackMode}'
-    )
-    return contactPoint
-
-
-def supportConnectorEmbeddedEnd(contactPoint, beamEndpoint):
-    direction = vectorBetween(contactPoint, beamEndpoint)
-    if not safeNormalize(direction):
-        return contactPoint
-
-    return addVec(contactPoint, direction, SUPPORT_CONNECTOR_OVERLAP_CM)
-
-
-def distancePointToLine(point, linePoint, lineOtherPoint):
-    if not point or not linePoint or not lineOtherPoint:
-        return None
-
-    axis = vectorBetween(linePoint, lineOtherPoint)
-    if not safeNormalize(axis):
-        return None
-
-    offset = vectorBetween(linePoint, point)
-    axial = offset.dotProduct(axis)
-    perpendicular = adsk.core.Vector3D.create(
-        offset.x - axis.x * axial,
-        offset.y - axis.y * axial,
-        offset.z - axis.z * axial
-    )
-    return perpendicular.length
-
-
-def supportConnectorDebugLog(
-    name,
-    transitionPoint,
-    contactPoint,
-    embeddedEndPoint,
-    beamEndpoint,
-    beamOtherEndpoint,
-    connectorDiameterCm,
-    beamDiameterCm,
-    connectorFeature,
-    collarFeature
-):
-    beamRadius = beamDiameterCm * 0.5 if beamDiameterCm else None
-    contactRadius = distancePointToLine(contactPoint, beamEndpoint, beamOtherEndpoint)
-    embeddedRadius = distancePointToLine(embeddedEndPoint, beamEndpoint, beamOtherEndpoint)
-    transitionToContact = transitionPoint.distanceTo(contactPoint) if transitionPoint and contactPoint else -1.0
-    contactToEmbedded = contactPoint.distanceTo(embeddedEndPoint) if contactPoint and embeddedEndPoint else -1.0
-    transitionToEmbedded = transitionPoint.distanceTo(embeddedEndPoint) if transitionPoint and embeddedEndPoint else -1.0
-
-    supportDebugLog(
-        f'createSupportInterfaceLoft {name}: planB connector detail '
-        f'transition={formatPoint(transitionPoint)}, contact={formatPoint(contactPoint)}, '
-        f'embeddedEnd={formatPoint(embeddedEndPoint)}, beamEndpoint={formatPoint(beamEndpoint)}, '
-        f'beamOther={formatPoint(beamOtherEndpoint)}, '
-        f'transitionToContact={transitionToContact:.6f}, '
-        f'contactToEmbedded={contactToEmbedded:.6f}, transitionToEmbedded={transitionToEmbedded:.6f}, '
-        f'connectorDiameter={connectorDiameterCm:.6f}, '
-        f'beamDiameter={(beamDiameterCm if beamDiameterCm else -1.0):.6f}, '
-        f'beamRadius={(beamRadius if beamRadius is not None else -1.0):.6f}, '
-        f'contactRadius={(contactRadius if contactRadius is not None else -1.0):.6f}, '
-        f'embeddedRadius={(embeddedRadius if embeddedRadius is not None else -1.0):.6f}, '
-        f'connector={connectorFeature is not None}, collar={collarFeature is not None}, '
-        f'collarEnabled={SUPPORT_CONNECTOR_CREATE_COLLAR}'
-    )
-
-
-def createSupportJointCollar(
-    component,
-    beamEndpoint,
-    beamOtherEndpoint,
-    beamDiameterCm,
-    connectorDiameterCm,
-    name
-):
-    if not beamEndpoint or not beamOtherEndpoint:
-        return None
-
-    beamAxis = vectorBetween(beamOtherEndpoint, beamEndpoint)
-    if not safeNormalize(beamAxis):
-        return None
-
-    thickness = max(
-        connectorDiameterCm * SUPPORT_CONNECTOR_COLLAR_THICKNESS_SCALE,
-        SUPPORT_CONNECTOR_OVERLAP_CM
-    )
-    startPoint = addVec(beamEndpoint, beamAxis, -thickness * 0.35)
-    endPoint = addVec(beamEndpoint, beamAxis, thickness * 0.65)
-    collarDiameter = max(
-        beamDiameterCm if beamDiameterCm else 0.0,
-        connectorDiameterCm * SUPPORT_CONNECTOR_COLLAR_SCALE
-    )
-    return createSupportBeamBody(
-        component,
-        startPoint,
-        endPoint,
-        collarDiameter,
-        name
-    )
-
-
-def supportInterfaceCircleExtensionEndPoint(circlePoint, beamPoint):
-    direction = vectorBetween(circlePoint, beamPoint)
-    distance = direction.length
-    if distance < 0.000001:
-        return None
-
-    direction.normalize()
-    extensionDistance = min(distance * 0.65, max(SUPPORT_INTERFACE_TRANSITION_STANDOFF_CM, distance * 0.5))
-    if extensionDistance <= 0.000001:
-        return None
-
-    return addVec(circlePoint, direction, extensionDistance)
-
-
-def createSupportTrackSquareToCircleLoft(
-    component,
-    circlePoint,
-    trackPoint,
-    xAxis,
-    yAxis,
-    circleSizeCm,
-    squareSizeCm,
-    name
-):
-    circlePlane = createPlaneByThreePoints(
-        component,
-        circlePoint,
-        addVec(circlePoint, xAxis, 1.0),
-        addVec(circlePoint, yAxis, 1.0),
-        f'{name}_p1_circle_plane'
-    )
-    squarePlane = createPlaneByThreePoints(
-        component,
-        trackPoint,
-        addVec(trackPoint, xAxis, 1.0),
-        addVec(trackPoint, yAxis, 1.0),
-        f'{name}_track_square_plane'
-    )
-    if not circlePlane or not squarePlane:
-        supportDebugLog(f'createSupportInterfaceLoft {name}: square-to-circle plane creation failed')
-        return None, None
-
-    circleSketch, circleProfile = createCircleProfileOnPlane(
-        component,
-        circlePlane,
-        circlePoint,
-        circleSizeCm,
-        f'{name}_p1_circle_profile'
-    )
-    squareSketch, squareProfile = createCenteredRectangleProfileOnPlane(
-        component,
-        squarePlane,
-        trackPoint,
-        xAxis,
-        yAxis,
-        squareSizeCm,
-        squareSizeCm,
-        f'{name}_track_square_profile'
-    )
-
-    if not circleProfile or not squareProfile:
-        supportDebugLog(
-            f'createSupportInterfaceLoft {name}: square-to-circle profile failed; '
-            f'circle={describeProfile(circleProfile)}, square={describeProfile(squareProfile)}'
-        )
-        return None, None
-
-    trackLoft = createLoftFromProfiles(
-        component,
-        [squareProfile, circleProfile],
-        f'{name}_track_square_to_p1_circle'
-    )
-    supportDebugLog(
-        f'createSupportInterfaceLoft {name}: square-to-circle loft={trackLoft is not None}, '
-        f'circle={formatPoint(circlePoint)}, track={formatPoint(trackPoint)}, '
-        f'distance={circlePoint.distanceTo(trackPoint):.6f}, '
-        f'circleProfile={describeProfile(circleProfile)}, squareProfile={describeProfile(squareProfile)}'
-    )
-    return trackLoft, circleProfile
-
-
-def createSupportCircleToCircleLoft(
-    component,
-    startPoint,
-    endPoint,
-    xAxis,
-    yAxis,
-    diameterCm,
-    name,
-    featureSuffix='p1_circle_to_beam_top',
-    throughPoints=None,
-    operation=adsk.fusion.FeatureOperations.NewBodyFeatureOperation
-):
-    profilePoints = [startPoint]
-    if throughPoints:
-        profilePoints.extend(point for point in throughPoints if point)
-    profilePoints.append(endPoint)
-
-    gapDirection = vectorBetween(startPoint, endPoint)
-    gapDistance = startPoint.distanceTo(endPoint)
-    if not safeNormalize(gapDirection):
-        supportDebugLog(f'createSupportInterfaceLoft {name}: gap direction failed')
-        return None
-
-    supportDebugLog(
-        f'createSupportInterfaceLoft {name}: {featureSuffix} input '
-        f'start={formatPoint(startPoint)}, end={formatPoint(endPoint)}, '
-        f'distance={gapDistance:.6f}, diameter={diameterCm:.6f}, '
-        f'direction={formatVector(gapDirection)}, sections={len(profilePoints)}'
-    )
-
-    profiles = []
-    for pointIndex, profilePoint in enumerate(profilePoints):
-        plane = createPlaneNormalToVector(
-            component,
-            profilePoint,
-            gapDirection,
-            f'{name}_{featureSuffix}_{pointIndex:02d}_plane'
-        )
-        if not plane:
-            supportDebugLog(
-                f'createSupportInterfaceLoft {name}: gap circle plane creation failed '
-                f'at section {pointIndex}, point={formatPoint(profilePoint)}'
-            )
-            return None
-
-        sketch, profile = createCircleProfileOnPlane(
-            component,
-            plane,
-            profilePoint,
-            diameterCm,
-            f'{name}_{featureSuffix}_{pointIndex:02d}_profile'
-        )
-        if not profile:
-            supportDebugLog(
-                f'createSupportInterfaceLoft {name}: circle-to-circle profile failed '
-                f'at section {pointIndex}, point={formatPoint(profilePoint)}, '
-                f'profile={describeProfile(profile)}'
-            )
-            return None
-        profiles.append(profile)
-
-    loft = createLoftFromProfiles(
-        component,
-        profiles,
-        f'{name}_{featureSuffix}',
-        operation
-    )
-    supportDebugLog(
-        f'createSupportInterfaceLoft {name}: {featureSuffix} loft={loft is not None}, '
-        f'sections={len(profiles)}, LAST_SWEEP_ERROR={LAST_SWEEP_ERROR}'
-    )
-    return loft
-
-
-def createSupportInterfaceLoft(
-    component,
-    startPoint,
-    endPoint,
-    frame,
-    startSizeCm,
-    endSizeCm,
-    name,
-    supportKind='single',
-    beamEndpoint=None,
-    beamOtherEndpoint=None,
-    beamDiameterCm=None
-):
+def createSupportInterfaceLoft(component, startPoint, endPoint, frame, startSizeCm, endSizeCm, name):
     if startPoint.distanceTo(endPoint) < 0.000001:
-        supportDebugLog(f'createSupportInterfaceLoft {name}: skipped; zero distance')
         return False
 
-    xAxis, yAxis = supportInterfaceProfileAxes(startPoint, endPoint, frame, supportKind)
-    if not xAxis or not yAxis:
-        supportDebugLog(f'createSupportInterfaceLoft {name}: skipped; bad profile axes')
-        return False
+    if frame:
+        xAxis = frame.xAxis
+        yAxis = frame.yAxis
+    else:
+        tangent = vectorBetween(startPoint, endPoint)
+        if not safeNormalize(tangent):
+            return False
+        xAxis = perpendicularUnitVector(tangent)
+        if not xAxis:
+            return False
+        yAxis = tangent.crossProduct(xAxis)
+        if not safeNormalize(yAxis):
+            return False
 
     try:
-        supportDebugLog(
-            f'createSupportInterfaceLoft {name}: begin kind={supportKind}, '
-            f'start={formatPoint(startPoint)}, end={formatPoint(endPoint)}, '
-            f'xAxis={formatVector(xAxis)}, yAxis={formatVector(yAxis)}, '
-            f'sizes={startSizeCm:.6f}->{endSizeCm:.6f}'
-        )
-        if supportKind in ('single', 'double', 'straight', '90'):
-            transitionPoint = supportInterfaceTransitionPoint(startPoint, endPoint, startSizeCm)
-            if not transitionPoint:
-                supportDebugLog(f'createSupportInterfaceLoft {name}: transition point failed')
-                return False
-            supportDebugLog(
-                f'createSupportInterfaceLoft {name}: transition '
-                f'p1={formatPoint(transitionPoint)}, '
-                f'p1ToStart={transitionPoint.distanceTo(startPoint):.6f}, '
-                f'p1ToTrack={transitionPoint.distanceTo(endPoint):.6f}'
-            )
-
-            trackLoft, transitionProfile = createSupportTrackSquareToCircleLoft(
-                component,
-                transitionPoint,
-                endPoint,
-                xAxis,
-                yAxis,
-                startSizeCm,
-                endSizeCm,
-                name
-            )
-            if not trackLoft or not transitionProfile:
-                return False
-
-            if supportKind == '90':
-                embeddedStartPoint = supportConnectorEmbedPoint(startPoint, transitionPoint, startSizeCm)
-                connectorFeature = createSupportBeamBody(
-                    component,
-                    embeddedStartPoint,
-                    transitionPoint,
-                    startSizeCm,
-                    f'{name}_p1_circle_to_support_beam'
-                )
-                supportDebugLog(
-                    f'createSupportInterfaceLoft {name}: 90 connector beam={connectorFeature is not None}, '
-                    f'from={formatPoint(embeddedStartPoint)}, supportTop={formatPoint(startPoint)}, '
-                    f'to={formatPoint(transitionPoint)}'
-                )
-                return connectorFeature is not None
-
-            extensionEndPoint = supportInterfaceCircleExtensionEndPoint(transitionPoint, startPoint)
-            if not extensionEndPoint:
-                supportDebugLog(f'createSupportInterfaceLoft {name}: extension end point failed')
-                return False
-
-            finalBeamTarget = supportInterfaceFinalOverlapPoint(
-                extensionEndPoint,
-                startPoint,
-                startSizeCm
-            )
-            extensionLoft = createSupportCircleToCircleLoft(
-                component,
-                transitionPoint,
-                extensionEndPoint,
-                xAxis,
-                yAxis,
-                startSizeCm,
-                name,
-                'p1_circle_extension'
-            )
-            finalLoft = createSupportCircleToCircleLoft(
-                component,
-                extensionEndPoint,
-                finalBeamTarget,
-                xAxis,
-                yAxis,
-                startSizeCm,
-                name,
-                'extension_to_beam_top',
-                throughPoints=[startPoint]
-            )
-            supportDebugLog(
-                f'createSupportInterfaceLoft {name}: staged non-90 '
-                f'extensionEnd={formatPoint(extensionEndPoint)}, '
-                f'beamTop={formatPoint(startPoint)}, finalBeamTarget={formatPoint(finalBeamTarget)}, '
-                f'overlap={startPoint.distanceTo(finalBeamTarget):.6f}, '
-                f'extensionLoft={extensionLoft is not None}, finalLoft={finalLoft is not None}'
-            )
-            flushSupportDebugLogBuffer()
-            return extensionLoft is not None and finalLoft is not None
-
         startPlane = createPlaneByThreePoints(
             component,
             startPoint,
@@ -3225,18 +3006,17 @@ def createSupportInterfaceLoft(
             f'{name}_end_plane'
         )
         if not startPlane or not endPlane:
-            supportDebugLog(f'createSupportInterfaceLoft {name}: plane creation failed')
             return False
 
-        startSketch, startProfile = supportInterfaceStartProfile(
+        startSketch, startProfile = createCenteredRectangleProfileOnPlane(
             component,
             startPlane,
             startPoint,
             xAxis,
             yAxis,
             startSizeCm,
-            supportKind,
-            name
+            startSizeCm,
+            f'{name}_start_profile'
         )
         endSketch, endProfile = createCenteredRectangleProfileOnPlane(
             component,
@@ -3250,21 +3030,169 @@ def createSupportInterfaceLoft(
         )
 
         if not startProfile or not endProfile:
-            supportDebugLog(
-                f'createSupportInterfaceLoft {name}: profile failed; '
-                f'start={describeProfile(startProfile)}, end={describeProfile(endProfile)}'
-            )
             return False
 
-        loft = createLoftFromProfiles(component, [startProfile, endProfile], name)
-        if loft:
-            supportDebugLog(f'createSupportInterfaceLoft {name}: loft succeeded')
+        return createLoftFromProfiles(component, [startProfile, endProfile], name) is not None
+    except Exception as err:
+        supportDebugLog(f'createSupportInterfaceLoft {name}: failed: {err}')
+        return False
+
+
+def createSupportTrackConnector(component, placement, name):
+    trackAnchor = placement['trackAnchor']
+    circleCenter = placement['circleCenter']
+    neckEnd = placement['neckEnd']
+    beamEnd = placement['beamEnd']
+    padAcross = placement['padAcross']
+    padAlongTrack = placement['padAlongTrack']
+    padNormal = placement['padNormal']
+    beamAxis = placement['beamAxis']
+    beamDiameterCm = placement['beamDiameterCm']
+    circleDiameterCm = placement['circleDiameterCm']
+    collarDiameterCm = placement['collarDiameterCm']
+    squareSizeCm = placement['squareSizeCm']
+    collarStart = placement.get('collarStart', addVec(circleCenter, padNormal, -SUPPORT_CONNECTOR_OVERLAP_CM))
+    collarEnd = placement.get('collarEnd', addVec(neckEnd, padNormal, SUPPORT_CONNECTOR_OVERLAP_CM))
+    angledStart = placement.get('angledStart', addVec(neckEnd, padNormal, -SUPPORT_CONNECTOR_OVERLAP_CM))
+    angledEnd = placement.get('angledEnd', addVec(beamEnd, beamAxis, SUPPORT_CONNECTOR_OVERLAP_CM))
+
+    try:
+        squarePlane = createPlaneByThreePoints(
+            component,
+            trackAnchor,
+            addVec(trackAnchor, padAcross, 1.0),
+            addVec(trackAnchor, padAlongTrack, 1.0),
+            f'{name}_square_plane'
+        )
+        circlePlane = createPlaneByThreePoints(
+            component,
+            circleCenter,
+            addVec(circleCenter, padAcross, 1.0),
+            addVec(circleCenter, padAlongTrack, 1.0),
+            f'{name}_circle_plane'
+        )
+        if not squarePlane or not circlePlane:
+            return False
+
+        squareSketch, squareProfile = createCenteredRectangleProfileOnPlane(
+            component,
+            squarePlane,
+            trackAnchor,
+            padAcross,
+            padAlongTrack,
+            squareSizeCm,
+            squareSizeCm,
+            f'{name}_square_profile'
+        )
+        circleSketch, circleProfile = createCircleProfileOnPlane(
+            component,
+            circlePlane,
+            circleCenter,
+            circleDiameterCm,
+            f'{name}_circle_profile'
+        )
+        if not squareProfile or not circleProfile:
+            return False
+
+        padLoft = createLoftFromProfiles(
+            component,
+            [squareProfile, circleProfile],
+            f'{name}_pad_loft'
+        )
+        if not padLoft:
+            return False
+
+        collarOk = createSupportBeamBody(
+            component,
+            collarStart,
+            collarEnd,
+            collarDiameterCm,
+            f'{name}_collar'
+        )
+        if not collarOk:
+            return False
+
+        if placement.get('supportKind') in ('90', '180'):
+            supportDebugLog(
+                f'{name}: preview connector created without final beam loft; '
+                f'kind={placement.get("supportKind")}'
+            )
             return True
 
-        supportDebugLog(f'createSupportInterfaceLoft {name}: loft failed; LAST_SWEEP_ERROR={LAST_SWEEP_ERROR}')
-        return False
+        if angledStart.distanceTo(angledEnd) < 0.000001:
+            return True
+
+        angledStartPlane = createPlaneByThreePoints(
+            component,
+            angledStart,
+            addVec(angledStart, padAcross, 1.0),
+            addVec(angledStart, padAlongTrack, 1.0),
+            f'{name}_angled_start_plane'
+        )
+        angledEndPlane = createPlaneNormalToVector(
+            component,
+            angledEnd,
+            beamAxis,
+            f'{name}_angled_end_plane'
+        )
+        if not angledStartPlane or not angledEndPlane:
+            supportDebugLog(f'{name}: angled planes failed; using circular beam fallback')
+            return createSupportBeamBody(
+                component,
+                angledStart,
+                angledEnd,
+                max(collarDiameterCm, beamDiameterCm),
+                f'{name}_angled_fallback'
+            )
+
+        startSketch, startProfile = createCircleProfileOnPlane(
+            component,
+            angledStartPlane,
+            angledStart,
+            collarDiameterCm,
+            f'{name}_angled_start_profile'
+        )
+        endSketch, endProfile = createCircleProfileOnPlane(
+            component,
+            angledEndPlane,
+            angledEnd,
+            beamDiameterCm,
+            f'{name}_angled_end_profile'
+        )
+        if not startProfile or not endProfile:
+            supportDebugLog(f'{name}: angled profiles failed; using circular beam fallback')
+            return createSupportBeamBody(
+                component,
+                angledStart,
+                angledEnd,
+                max(collarDiameterCm, beamDiameterCm),
+                f'{name}_angled_fallback'
+            )
+
+        angledLoft = createLoftFromProfiles(
+            component,
+            [startProfile, endProfile],
+            f'{name}_angled_loft'
+        )
+        if angledLoft:
+            return True
+
+        supportDebugLog(f'{name}: angled loft failed; using circular beam fallback')
+        fallbackOk = createSupportBeamBody(
+            component,
+            angledStart,
+            angledEnd,
+            max(collarDiameterCm, beamDiameterCm),
+            f'{name}_angled_fallback'
+        )
+        if fallbackOk:
+            supportDebugLog(
+                f'{name}: fallback cylinder created, start={formatPoint(angledStart)}, '
+                f'end={formatPoint(angledEnd)}, diameter={max(collarDiameterCm, beamDiameterCm):.6f}'
+            )
+        return fallbackOk
     except Exception as err:
-        supportDebugLog(f'createSupportInterfaceLoft {name}: failed: {err}\n{traceback.format_exc()}')
+        supportDebugLog(f'createSupportTrackConnector {name}: failed: {err}\n{traceback.format_exc()}')
         return False
 
 
@@ -3291,7 +3219,7 @@ def createSupportFooterPad(component, footer, supportScaleFactor, prefabOffsets,
     )
 
 
-def createSupportsFromXml(component, xmlPath, pathScaleFactor, supportTrackSamples=None, trackBodies=None):
+def createSupportsFromXml(component, xmlPath, pathScaleFactor, supportTrackSamples=None):
     if not os.path.exists(xmlPath):
         return {
             'ok': False,
@@ -3339,15 +3267,45 @@ def createSupportsFromXml(component, xmlPath, pathScaleFactor, supportTrackSampl
         f'beams={len(supportData["beams"])}, interfaces={len(supportData["interfaces"])}, '
         f'footers={len(supportData["footers"])}, skipped={len(supportData["skipped"])}'
     )
-    prefabOffsets = computeSupportPrefabOffsets(
+    beamsByNode = buildSupportBeamAdjacency(supportData)
+    interfacePlans = []
+    if CREATE_SUPPORT_TRACK_INTERFACES and supportTrackSamples:
+        interfacePlans = planSupportInterfaces(
+            supportData,
+            supportTrackSamples,
+            supportScaleFactor,
+            beamsByNode
+        )
+
+    prefabOffsets = computeSupportPrefabOffsetsFromPlans(
         supportData,
-        supportTrackSamples,
+        interfacePlans,
         supportScaleFactor
     )
     floorZ = computeSupportFloorZ(supportData, supportScaleFactor, prefabOffsets)
+    interfacePlacements, endpointOverrides = buildSupportInterfacePlacements(
+        supportData,
+        interfacePlans,
+        prefabOffsets,
+        supportScaleFactor,
+        floorZ,
+        beamsByNode
+    )
+
+    supportKindsByPrefab = {
+        plan['interface']['prefabIndex']: plan['supportKind']
+        for plan in interfacePlans
+    }
+    prefabComponents = {}
+    for prefabIndex in range(supportData['prefabCount']):
+        supportKind = supportKindsByPrefab.get(prefabIndex, 'support')
+        componentName = f'support_piece_{prefabIndex + 1:03d}_{supportKind}'
+        prefabOccurrence = component.occurrences.addNewComponent(adsk.core.Matrix3D.create())
+        prefabComponent = adsk.fusion.Component.cast(prefabOccurrence.component)
+        prefabComponent.name = componentName
+        prefabComponents[prefabIndex] = prefabComponent
 
     beamCount = 0
-    beamDebugRecordsByNodeId = {}
     for sequenceNumber, beam in enumerate(supportData['beams'], start=1):
         startPoint = supportPointForKind(
             beam['startMeters'],
@@ -3368,6 +3326,14 @@ def createSupportsFromXml(component, xmlPath, pathScaleFactor, supportTrackSampl
         diameterCm = beam['diameterMeters'] * supportScaleFactor * SUPPORT_BEAM_DIAMETER_SCALE
         name = f'support_{sequenceNumber:03d}_{beam["kind"]}'
 
+        startOverride = endpointOverrides.get((beam['prefabIndex'], beam['startId']))
+        if startOverride:
+            startPoint = startOverride
+
+        endOverride = endpointOverrides.get((beam['prefabIndex'], beam['endId']))
+        if endOverride:
+            endPoint = endOverride
+
         if DEBUG_SWEEP_LOGGING:
             debugLog(
                 f'createSupportsFromXml beam {sequenceNumber}: '
@@ -3383,125 +3349,73 @@ def createSupportsFromXml(component, xmlPath, pathScaleFactor, supportTrackSampl
             floorZ
         )
 
-        beamComponent = createChildComponent(component, name)
-        beamFeature = createSupportBeamBody(beamComponent, startPoint, endPoint, diameterCm, name)
-        if beamFeature:
-            registerSupportBeamDebugRecord(
-                beamDebugRecordsByNodeId,
-                beam.get('startId'),
-                startPoint,
-                endPoint,
-                diameterCm,
-                name
-            )
-            registerSupportBeamDebugRecord(
-                beamDebugRecordsByNodeId,
-                beam.get('endId'),
-                endPoint,
-                startPoint,
-                diameterCm,
-                name
-            )
-            trimSupportBeamBelowFloor(
-                beamComponent,
-                beamFeature,
-                startPoint,
-                endPoint,
-                diameterCm,
-                floorZ,
-                name
-            )
+        supportPieceComponent = prefabComponents.get(beam['prefabIndex'], component)
+
+        if createSupportBeamBody(supportPieceComponent, startPoint, endPoint, diameterCm, name):
             beamCount += 1
 
     interfaceCount = 0
     if CREATE_SUPPORT_TRACK_INTERFACES and supportTrackSamples:
-        for sequenceNumber, interface in enumerate(supportData['interfaces'], start=1):
-            trackSample = sampleSupportTrack(
-                supportTrackSamples,
-                interface['centerRailsCoord'],
-                supportScaleFactor,
-                snapToSafe=True,
-                forceSafe=True
-            )
-            if not trackSample:
-                continue
-
-            offset = supportOffsetForPrefab(prefabOffsets, interface['prefabIndex'])
-            supportTop = supportPointMetersToFusion(interface['pointMeters'], supportScaleFactor, offset)
-            frame = supportTrackFrame(trackSample)
-            supportKind = supportInterfaceKind(interface)
-            trackAnchor = supportTrackInterfaceAnchorForKind(trackSample, frame, supportKind, supportTop)
-            baseSizeCm = interface['diameterMeters'] * supportScaleFactor * SUPPORT_BEAM_DIAMETER_SCALE
-            startSizeCm = max(baseSizeCm, 0.05)
-            endSizeCm = max(supportInterfaceTrackSizeCm(supportKind), 0.05)
-            interfaceStart = supportInterfaceStartPoint(
-                interface,
-                supportTop,
-                trackAnchor,
-                frame,
-                startSizeCm
-            )
+        for placement in interfacePlacements:
+            sequenceNumber = placement['sequenceNumber']
+            interface = placement['interface']
+            trackSample = placement['trackSample']
             name = f'support_interface_{sequenceNumber:03d}'
-            nearestBeamRecord, nearestBeamDistance = nearestSupportBeamDebugRecord(
-                beamDebugRecordsByNodeId,
-                interface.get('nodeId'),
-                interfaceStart
+
+            nearestLogCm = trackSample.get(
+                'nearestCrosstieCm',
+                trackSample.get('nearestCrosstieDistanceCm', -1.0)
             )
-            nearestBeamEndpoint = nearestBeamRecord.get('endpoint') if nearestBeamRecord else None
-            nearestBeamOther = nearestBeamRecord.get('otherEndpoint') if nearestBeamRecord else None
-            nearestBeamName = nearestBeamRecord.get('name') if nearestBeamRecord else None
-            nearestBeamDiameter = nearestBeamRecord.get('diameterCm') if nearestBeamRecord else None
+            if nearestLogCm is None:
+                nearestLogCm = -1.0
 
             supportDebugLog(
-                f'interface {sequenceNumber}: centerRails={interface["centerRailsCoord"]:.6f}m, '
-                f'kind={supportKind}, targetCm={trackSample["targetCm"]:.6f}, '
+                f'interface {sequenceNumber}: prefab={interface["prefabIndex"]}, '
+                f'node={interface["nodeId"]}, centerRails={interface["centerRailsCoord"]:.6f}m, '
+                f'xmlKind={placement["xmlSupportKind"]}, kind={placement["supportKind"]}, '
+                f'rollDeg={(placement["rollDegrees"] if placement["rollDegrees"] is not None else -1.0):.6f}, '
+                f'targetCm={trackSample["targetCm"]:.6f}, '
                 f'originalTargetCm={trackSample.get("originalTargetCm", trackSample["targetCm"]):.6f}, '
+                f'snapStatus={trackSample.get("snapStatus", "unknown")}, '
                 f'snapDeltaCm={trackSample.get("snapDeltaCm", 0.0):.6f}, '
-                f'nearestCrosstieCm={trackSample.get("nearestCrosstieDistanceCm", -1.0):.6f}, '
-                f'between={trackSample.get("betweenCrossties", None)}, '
+                f'nearestCrosstieCm={nearestLogCm:.6f}, '
                 f'track={trackSample["folderName"]}[{trackSample["index"]}] '
-                f't={trackSample["t"]:.6f}, supportTop={formatPoint(supportTop)}, '
-                f'interfaceStart={formatPoint(interfaceStart)}, trackAnchor={formatPoint(trackAnchor)}, '
-                f'gap={interfaceStart.distanceTo(trackAnchor):.6f}cm, '
-                f'nearestBeam={nearestBeamName}, '
-                f'nearestBeamEndpoint={formatPoint(nearestBeamEndpoint)}, '
-                f'nearestBeamOther={formatPoint(nearestBeamOther)}, '
-                f'nearestBeamDiameter={(nearestBeamDiameter if nearestBeamDiameter else -1.0):.6f}, '
-                f'nearestBeamDistance={(nearestBeamDistance if nearestBeamDistance is not None else -1.0):.6f}, '
-                f'sizes={startSizeCm:.6f}->{endSizeCm:.6f}cm, '
-                f'source={interface["sourcePath"]}'
+                f't={trackSample["t"]:.6f}, trackAnchor={formatPoint(placement["trackAnchor"])}, '
+                f'circleCenter={formatPoint(placement["circleCenter"])}, '
+                f'collarStart={formatPoint(placement["collarStart"])}, '
+                f'neckEnd={formatPoint(placement["neckEnd"])}, '
+                f'angledStart={formatPoint(placement["angledStart"])}, '
+                f'beamEnd={formatPoint(placement["beamEnd"])}, '
+                f'angledEnd={formatPoint(placement["angledEnd"])}, '
+                f'beamAxisSource={placement["beamAxisSource"]}, '
+                f'beamAxis={formatVector(placement["beamAxis"])}, '
+                f'beamDiameter={placement["beamDiameterCm"]:.6f}cm, '
+                f'circleDiameter={placement["circleDiameterCm"]:.6f}cm, '
+                f'collarDiameter={placement["collarDiameterCm"]:.6f}cm, '
+                f'square={placement["squareSizeCm"]:.6f}cm, source={interface["sourcePath"]}'
             )
 
-            if createSupportInterfaceLoft(
-                component,
-                interfaceStart,
-                trackAnchor,
-                frame,
-                startSizeCm,
-                endSizeCm,
-                name,
-                supportKind,
-                nearestBeamEndpoint,
-                nearestBeamOther,
-                nearestBeamDiameter
+            if createSupportTrackConnector(
+                prefabComponents.get(interface['prefabIndex'], component),
+                placement,
+                name
             ):
                 interfaceCount += 1
 
     footerCount = 0
     if CREATE_SUPPORT_FOOTER_PADS:
         for sequenceNumber, footer in enumerate(supportData['footers'], start=1):
-            if createSupportFooterPad(component, footer, supportScaleFactor, prefabOffsets, floorZ, sequenceNumber):
+            if createSupportFooterPad(
+                prefabComponents.get(footer['prefabIndex'], component),
+                footer,
+                supportScaleFactor,
+                prefabOffsets,
+                floorZ,
+                sequenceNumber
+            ):
                 footerCount += 1
 
-    supportBodies = collectComponentBodies(component)
-    movedBodyCount = resolveSupportTrackIntersections(
-        component,
-        supportBodies,
-        trackBodies,
-        supportTrackSamples
-    )
-
-    expectedInterfaceCount = len(supportData['interfaces']) if (CREATE_SUPPORT_TRACK_INTERFACES and supportTrackSamples) else 0
+    expectedInterfaceCount = len(interfacePlacements) if (CREATE_SUPPORT_TRACK_INTERFACES and supportTrackSamples) else 0
     ok = beamCount == len(supportData['beams']) and interfaceCount == expectedInterfaceCount
     error = None if ok else (
         f'created {beamCount} of {len(supportData["beams"])} support beams, '
@@ -3518,8 +3432,7 @@ def createSupportsFromXml(component, xmlPath, pathScaleFactor, supportTrackSampl
         'footerCount': footerCount,
         'footerTotal': len(supportData['footers']) if CREATE_SUPPORT_FOOTER_PADS else 0,
         'prefabCount': supportData['prefabCount'],
-        'skippedCount': len(supportData['skipped']),
-        'movedBodyCount': movedBodyCount
+        'skippedCount': len(supportData['skipped'])
     }
 
 
@@ -3528,7 +3441,6 @@ def createSupportsFromXml(component, xmlPath, pathScaleFactor, supportTrackSampl
 # ============================================================
 
 def run(context):
-    app = None
     ui = None
 
     try:
@@ -3557,10 +3469,23 @@ def run(context):
         design.designType = adsk.fusion.DesignTypes.DirectDesignType
         rootComponent = design.rootComponent
 
-        userSelectedFolder, baseFolderPath = promptForBaseFolder(ui)
+        if PROMPT_FOR_INPUT_PATHS:
+            userSelectedFolder, baseFolderPath = promptForBaseFolder(ui)
+            if not userSelectedFolder:
+                debugLog('run: user cancelled folder selection')
+                ui.messageBox('Cancelled.')
+                return
+        else:
+            baseFolderPath = DEFAULT_TRACK_BASE_FOLDER
+            userSelectedFolder = os.path.isdir(baseFolderPath)
+            debugLog(f'run: using default base folder={baseFolderPath}')
+
         if not userSelectedFolder:
-            debugLog('run: user cancelled folder selection')
-            ui.messageBox('Cancelled.')
+            debugLog(f'run: base folder unavailable: {baseFolderPath}')
+            ui.messageBox(
+                f'Track folder not found:\n{baseFolderPath}\n\n'
+                'Update DEFAULT_TRACK_BASE_FOLDER or set PROMPT_FOR_INPUT_PATHS = True.'
+            )
             return
 
         debugLog(f'run: selected base folder={baseFolderPath}')
@@ -3649,13 +3574,23 @@ def run(context):
         supportXmlSelected = False
         supportXmlPath = None
         if CREATE_SUPPORTS_FROM_XML:
-            supportXmlSelected, supportXmlPath = promptForSupportXmlFile(ui)
+            if PROMPT_FOR_INPUT_PATHS:
+                supportXmlSelected, supportXmlPath = promptForSupportXmlFile(ui)
+            else:
+                supportXmlPath = DEFAULT_SUPPORT_XML_PATH
+                supportXmlSelected = os.path.isfile(supportXmlPath)
+                debugLog(f'run: using default supports XML={supportXmlPath}')
+
             if supportXmlSelected and supportXmlPath:
                 debugLog(f'run: selected supports XML={supportXmlPath}')
             else:
-                debugLog('run: supports XML selection skipped')
-
-        suppressViewportRefresh(app)
+                debugLog(f'run: supports XML unavailable: {supportXmlPath}')
+                if not PROMPT_FOR_INPUT_PATHS:
+                    ui.messageBox(
+                        f'Supports XML not found:\n{supportXmlPath}\n\n'
+                        'Update DEFAULT_SUPPORT_XML_PATH or set PROMPT_FOR_INPUT_PATHS = True.'
+                    )
+                    return
 
         identity = adsk.core.Matrix3D.create()
         topOcc = rootComponent.occurrences.addNewComponent(identity)
@@ -3664,7 +3599,6 @@ def run(context):
 
         summaryLines = []
         scaledTrackDataList = []
-        allTrackBodies = []
 
         for folderName in trackFolders:
             debugLog('=' * 72)
@@ -3765,9 +3699,6 @@ def run(context):
 
             summaryLines.append(line)
             debugLog(f'run: summary line: {line}')
-            trackBodies = collectComponentBodies(trackComp)
-            allTrackBodies.extend(trackBodies)
-            debugLog(f'run: {folderName}: collected track bodies={len(trackBodies)}')
 
         if CREATE_SUPPORTS_FROM_XML:
             if supportXmlSelected and supportXmlPath:
@@ -3780,8 +3711,7 @@ def run(context):
                     supportComp,
                     supportXmlPath,
                     pathScaleFactor,
-                    supportTrackSamples,
-                    allTrackBodies
+                    supportTrackSamples
                 )
 
                 if supportResult['ok']:
@@ -3789,16 +3719,14 @@ def run(context):
                         f'Supports: {supportResult["beamCount"]}/{supportResult["beamTotal"]} beams, '
                         f'{supportResult["interfaceCount"]}/{supportResult["interfaceTotal"]} interfaces, '
                         f'{supportResult["footerCount"]}/{supportResult["footerTotal"]} footers, '
-                        f'{supportResult["prefabCount"]} prefabs, '
-                        f'{supportResult.get("movedBodyCount", 0)} moved supports'
+                        f'{supportResult["prefabCount"]} prefabs'
                     )
                 else:
                     supportLine = (
                         f'Supports failed: {supportResult["error"]} | '
                         f'{supportResult["beamCount"]}/{supportResult["beamTotal"]} beams, '
                         f'{supportResult["interfaceCount"]}/{supportResult["interfaceTotal"]} interfaces, '
-                        f'{supportResult["footerCount"]}/{supportResult["footerTotal"]} footers, '
-                        f'{supportResult.get("movedBodyCount", 0)} moved supports'
+                        f'{supportResult["footerCount"]}/{supportResult["footerTotal"]} footers'
                     )
 
                 if supportResult.get('skippedCount', 0):
@@ -3818,9 +3746,6 @@ def run(context):
             debugParts.append(f'Support log:\n{supportDebugLogPath()}')
         debugText = '\n\n' + '\n\n'.join(debugParts) if debugParts else ''
 
-        restoreViewportRefresh(app)
-        flushDebugLogs()
-
         ui.messageBox(
             f'Done!\n\n'
             f'Target gauge: {desiredGauge:.4f} cm / {desiredGauge * 10.0:.2f} mm\n'
@@ -3833,10 +3758,5 @@ def run(context):
 
     except:
         debugLog(f'run: fatal error\n{traceback.format_exc()}')
-        restoreViewportRefresh(app)
-        flushDebugLogs()
         if ui:
             ui.messageBox('Fatal error:\n' + traceback.format_exc())
-    finally:
-        restoreViewportRefresh(app)
-        flushDebugLogs()
